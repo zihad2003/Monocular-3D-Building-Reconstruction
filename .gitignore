@@ -1,0 +1,11 @@
+data/
+outputs/
+checkpoints/
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.pt
+*.obj
+.ipynb_checkpoints/
+_doc_extract.txt

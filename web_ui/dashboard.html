@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo3D Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">Geo<span>3D</span></div>
+            <ul class="side-menu">
+                <li class="active"><a href="#">📊 Workspace</a></li>
+                <li><a href="#">📁 My Models</a></li>
+                <li><a href="#">⚙️ Settings</a></li>
+                <li><a href="index.html">🏠 Home</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="dash-header">
+                <h2>Workspace</h2>
+                <div class="user-profile">
+                    <img src="https://i.pravatar.cc/150?img=33" alt="User">
+                </div>
+            </header>
+
+            <div class="workspace-grid">
+                <!-- Upload Area -->
+                <div class="upload-section glass-panel">
+                    <h3>Upload Satellite Image</h3>
+                    <div class="upload-dropzone" id="dropzone">
+                        <span class="upload-icon">📥</span>
+                        <p>Drag and drop image here, or <strong>browse</strong></p>
+                        <input type="file" id="file-upload" accept="image/*" hidden>
+                    </div>
+                    
+                    <div class="process-controls">
+                        <label>Target Level of Detail:</label>
+                        <select class="styled-select">
+                            <option>LoD1 (Block Extrusion)</option>
+                            <option>LoD2 (Roof Topology) - Beta</option>
+                        </select>
+                        <button class="btn-primary full-width" id="generate-btn">Generate 3D Model</button>
+                    </div>
+                </div>
+
+                <!-- Preview Area -->
+                <div class="preview-section glass-panel">
+                    <h3>3D Viewer</h3>
+                    <div class="viewer-container" id="viewer-container">
+                        <div class="empty-state">
+                            <p>Upload an image and hit Generate to see the 3D model.</p>
+                        </div>
+                    </div>
+                    <div class="viewer-actions" style="display: none;" id="viewer-actions">
+                        <button class="btn-secondary">Download .OBJ</button>
+                        <button class="btn-secondary">Export Heightmap</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analysis Log -->
+            <div class="log-section glass-panel">
+                <h3>Inference Log</h3>
+                <div class="log-console" id="log-console">
+                    <p class="sys-msg">System ready.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

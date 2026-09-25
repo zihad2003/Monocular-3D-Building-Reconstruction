@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo3D | Monocular Building Reconstruction</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">Geo<span>3D</span></div>
+        <ul class="nav-links">
+            <li><a href="#">Technology</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="dashboard.html" class="btn-primary">Go to Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">From Pixels to <span>Polygons</span>.</h1>
+            <p class="hero-subtitle">Transform single RGB satellite imagery into highly accurate 3D building models using state-of-the-art dual-decoder neural networks.</p>
+            <div class="hero-buttons">
+                <a href="dashboard.html" class="btn-primary large">Start Reconstructing</a>
+                <a href="#" class="btn-secondary large">Read the Paper</a>
+            </div>
+        </div>
+        <div class="hero-graphics">
+            <div class="glass-card before-card">
+                <h3>Input: Satellite Image</h3>
+                <div class="placeholder-img" style="background: url('https://images.unsplash.com/photo-1518331647614-7a1f04cd34af?q=80&w=600&auto=format&fit=crop') center/cover;"></div>
+            </div>
+            <div class="connector">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="glass-card after-card">
+                <h3>Output: 3D Model</h3>
+                <div class="placeholder-img" style="background: url('https://images.unsplash.com/photo-1616423641402-f8abfc3f3eeb?q=80&w=600&auto=format&fit=crop') center/cover;"></div>
+            </div>
+        </div>
+    </header>
+    
+    <section class="features">
+        <div class="feature-card">
+            <div class="icon">🛰️</div>
+            <h3>Monocular Inference</h3>
+            <p>Generate precise structural data using just a single top-down view.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🚀</div>
+            <h3>Fast Processing</h3>
+            <p>Our optimized ResNet-34 architecture delivers real-time inference speeds.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🏗️</div>
+            <h3>LoD1 & LoD2 Support</h3>
+            <p>From simple extrusions to complex multi-layered roof topologies.</p>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>

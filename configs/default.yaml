@@ -1,0 +1,32 @@
+# Default training config (local CPU-friendly defaults).
+# On Colab GPU, raise epochs / batch_size / n_train and use encoder resnet34.
+
+seed: 42
+img_size: 256
+max_height_m: 60.0
+
+data:
+  root: data
+  # synthetic fallback used until BONAI + height-labeled data are ready
+  use_synthetic: true
+  n_train: 200
+  n_val: 40
+
+model:
+  encoder_name: resnet18   # resnet34 on GPU Colab
+  encoder_weights: imagenet
+
+train:
+  epochs: 5                # 40 on Colab GPU with real/larger data
+  batch_size: 4            # 16 on GPU
+  lr: 0.0003
+  weight_decay: 0.0001
+  num_workers: 0           # 2 on Linux/Colab; 0 avoids Windows spawn issues
+  w_seg: 1.0
+  w_height: 1.0
+  # print every N batches so CPU runs show progress (see train.py)
+
+paths:
+  outputs: outputs
+  checkpoints: checkpoints
+  checkpoint_name: best_model.pt
