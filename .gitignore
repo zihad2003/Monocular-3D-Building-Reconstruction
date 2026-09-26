@@ -9,3 +9,12 @@ venv/
 *.obj
 .ipynb_checkpoints/
 _doc_extract.txt
+
+# Dataset ignores
+raw_data/**/*.png
+raw_data/**/*.jpg
+raw_data/**/*.jpeg
+raw_data/**/*.tif
+raw_data/**/*.tiff
+raw_data/**/*.npy
+raw_data/**/*.json

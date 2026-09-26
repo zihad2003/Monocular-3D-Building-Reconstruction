@@ -93,14 +93,56 @@ def mask_and_height_to_3d_mesh(
         crop = image_rgb[y0:y1, x0:x1]
         tex_img = Image.fromarray(crop.astype(np.uint8))
 
+        # --- AUTOMATIC WALL TEXTURING ---
+        # Unmerge vertices so roof and walls can have different UVs without conflict
+        mesh.unmerge_vertices()
         verts = mesh.vertices
+        faces = mesh.faces
+        face_normals = mesh.face_normals
+        
+        # Create Texture Atlas (Top: Roof Crop, Bottom: Procedural Wall with Windows)
+        ch, cw = crop.shape[:2]
+        wall_tex = np.full((ch, cw, 3), [220, 220, 225], dtype=np.uint8) # Concrete gray
+        # Draw window grid
+        win_w, win_h = max(cw // 8, 2), max(ch // 8, 2)
+        pad_x, pad_y = max(cw // 16, 1), max(ch // 16, 1)
+        for wy in range(pad_y, ch, win_h + pad_y):
+            for wx in range(pad_x, cw, win_w + pad_x):
+                end_y, end_x = min(wy + win_h, ch), min(wx + win_w, cw)
+                wall_tex[wy:end_y, wx:end_x] = [40, 50, 60] # Dark glass
+                
+        atlas_np = np.vstack([crop, wall_tex])
+        tex_img = Image.fromarray(atlas_np)
+        
         span_x_m = span_x_px * meters_per_pixel
         span_y_m = span_y_px * meters_per_pixel
-        u = np.clip(verts[:, 0] / span_x_m, 0.0, 1.0)
-        v = 1.0 - np.clip(verts[:, 1] / span_y_m, 0.0, 1.0)
-        mesh.visual = trimesh.visual.TextureVisuals(
-            uv=np.stack([u, v], axis=1), image=tex_img
-        )
+        
+        uvs = np.zeros((len(verts), 2))
+        
+        for i, face in enumerate(faces):
+            normal = face_normals[i]
+            v_idx = face
+            face_verts = verts[v_idx]
+            
+            if normal[2] > 0.5:
+                # Roof: Map to top half of atlas (V: 0.5 to 1.0)
+                u = np.clip(face_verts[:, 0] / max(span_x_m, 1e-6), 0.0, 1.0)
+                v = 1.0 - np.clip(face_verts[:, 1] / max(span_y_m, 1e-6), 0.0, 1.0)
+                uvs[v_idx, 0] = u
+                uvs[v_idx, 1] = (v * 0.5) + 0.5
+            else:
+                # Wall: Map to bottom half of atlas (V: 0.0 to 0.5)
+                # Use dominant axis for U to prevent stretching
+                if abs(normal[0]) > abs(normal[1]):
+                    u = np.clip(face_verts[:, 1] / max(span_y_m, 1e-6), 0.0, 1.0)
+                else:
+                    u = np.clip(face_verts[:, 0] / max(span_x_m, 1e-6), 0.0, 1.0)
+                # Z goes from 0 to height_val
+                v = np.clip(face_verts[:, 2] / max(height_val, 1e-6), 0.0, 1.0)
+                uvs[v_idx, 0] = u
+                uvs[v_idx, 1] = v * 0.5
+                
+        mesh.visual = trimesh.visual.TextureVisuals(uv=uvs, image=tex_img)
 
         world_x = minx * meters_per_pixel
         world_y = (h_img - maxy) * meters_per_pixel
