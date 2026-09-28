@@ -3,64 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geo3D | Monocular Building Reconstruction</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>Geo3D | Monocular 3D Building Reconstruction</title>
+    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
-<body>
-    <nav class="navbar">
-        <div class="logo">Geo<span>3D</span></div>
+<body class="landing-body">
+    <!-- Background subtle ambient glow effects -->
+    <div class="ambient-glow glow-top"></div>
+    <div class="ambient-glow glow-bottom"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar glass-panel-nav">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+            <span>Geo<span>3D</span></span>
+        </a>
         <ul class="nav-links">
-            <li><a href="#">Technology</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="dashboard.html" class="btn-primary">Go to Dashboard</a></li>
+            <li><a href="#pipeline">Pipeline</a></li>
+            <li><a href="#metrics">Benchmarks</a></li>
+            <li><a href="#features">Architecture</a></li>
+            <li>
+                <a href="dashboard.html" class="btn-primary nav-btn">
+                    <span>Launch Dashboard</span>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+            </li>
         </ul>
     </nav>
 
+    <!-- Hero Section -->
     <header class="hero">
         <div class="hero-content">
-            <h1 class="hero-title">From Pixels to <span>Polygons</span>.</h1>
-            <p class="hero-subtitle">Transform single RGB satellite imagery into highly accurate 3D building models using state-of-the-art dual-decoder neural networks.</p>
+            <div class="badge-pill">
+                <span class="status-indicator"></span>
+                <span>Deep Learning Monocular Reconstruction &bull; 40-Epoch Model Live</span>
+            </div>
+            <h1 class="hero-title">
+                Single Optical Satellite to <span class="gradient-text">Precision 3D Cities</span>
+            </h1>
+            <p class="hero-subtitle">
+                Transform standard monocular RGB satellite imagery into structured LoD1 3D building models and metric nDSM height fields using our multi-task deep neural network.
+            </p>
             <div class="hero-buttons">
-                <a href="dashboard.html" class="btn-primary large">Start Reconstructing</a>
-                <a href="#" class="btn-secondary large">Read the Paper</a>
+                <a href="dashboard.html" class="btn-primary large">
+                    <span>Enter 3D Workspace</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+                <a href="#pipeline" class="btn-secondary large">
+                    <span>Explore Pipeline</span>
+                </a>
             </div>
         </div>
-        <div class="hero-graphics">
-            <div class="glass-card before-card">
-                <h3>Input: Satellite Image</h3>
-                <div class="placeholder-img" style="background: url('https://images.unsplash.com/photo-1518331647614-7a1f04cd34af?q=80&w=600&auto=format&fit=crop') center/cover;"></div>
+
+        <!-- Interactive Visual Showcase: Live Pipeline Progression -->
+        <div class="hero-showcase">
+            <div class="showcase-card glass-panel">
+                <div class="showcase-header">
+                    <span class="step-badge">Stage 01</span>
+                    <h4>Input Optical RGB</h4>
+                </div>
+                <div class="showcase-img-wrap">
+                    <img src="test_samples/01_tall_skyscraper_towers.png" alt="Satellite RGB" class="showcase-img">
+                </div>
+                <div class="showcase-footer">
+                    <span>512 &times; 512 Satellite Tile</span>
+                </div>
             </div>
-            <div class="connector">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
+
+            <div class="pipeline-flow-arrow">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </div>
-            <div class="glass-card after-card">
-                <h3>Output: 3D Model</h3>
-                <div class="placeholder-img" style="background: url('https://images.unsplash.com/photo-1616423641402-f8abfc3f3eeb?q=80&w=600&auto=format&fit=crop') center/cover;"></div>
+
+            <div class="showcase-card glass-panel highlight-card">
+                <div class="showcase-header">
+                    <span class="step-badge highlight">Stage 02</span>
+                    <h4>Synthesized 3D Model</h4>
+                </div>
+                <div class="showcase-img-wrap">
+                    <img src="preview_3d.jpg" alt="Generated 3D Model" class="showcase-img">
+                </div>
+                <div class="showcase-footer">
+                    <span>LoD1 Extrusion &bull; Wavefront .OBJ</span>
+                </div>
             </div>
         </div>
     </header>
-    
-    <section class="features">
-        <div class="feature-card">
-            <div class="icon">🛰️</div>
-            <h3>Monocular Inference</h3>
-            <p>Generate precise structural data using just a single top-down view.</p>
-        </div>
-        <div class="feature-card">
-            <div class="icon">🚀</div>
-            <h3>Fast Processing</h3>
-            <p>Our optimized ResNet-34 architecture delivers real-time inference speeds.</p>
-        </div>
-        <div class="feature-card">
-            <div class="icon">🏗️</div>
-            <h3>LoD1 & LoD2 Support</h3>
-            <p>From simple extrusions to complex multi-layered roof topologies.</p>
+
+    <!-- Metrics Banner -->
+    <section class="metrics-section" id="metrics">
+        <div class="metrics-grid">
+            <div class="metric-item glass-panel">
+                <div class="metric-value">89.4%</div>
+                <div class="metric-label">Validation IoU</div>
+                <div class="metric-desc">Building Footprint Mask Accuracy</div>
+            </div>
+            <div class="metric-item glass-panel">
+                <div class="metric-value">2.98m</div>
+                <div class="metric-label">Height MAE</div>
+                <div class="metric-desc">Metric nDSM Elevation Error</div>
+            </div>
+            <div class="metric-item glass-panel">
+                <div class="metric-value">6,999+</div>
+                <div class="metric-label">Training Scenes</div>
+                <div class="metric-desc">SynRS3D & BONAI Benchmarks</div>
+            </div>
+            <div class="metric-item glass-panel">
+                <div class="metric-value">&lt; 850ms</div>
+                <div class="metric-label">Inference Latency</div>
+                <div class="metric-desc">End-to-End Mesh Generation</div>
+            </div>
         </div>
     </section>
 
-    <script src="script.js"></script>
+    <!-- 4-Step Pipeline Section -->
+    <section class="pipeline-section" id="pipeline">
+        <div class="section-heading text-center">
+            <span class="section-tag">End-to-End Workflow</span>
+            <h2>How Geo3D Reconstructs Urban Space</h2>
+            <p>From a single monocular image to geometric 3D meshes ready for CAD, GIS, and game engines.</p>
+        </div>
+
+        <div class="pipeline-grid">
+            <div class="pipeline-card glass-panel">
+                <div class="pipeline-step-num">01</div>
+                <div class="pipeline-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                </div>
+                <h3>Monocular Tile Ingestion</h3>
+                <p>Loads top-down satellite or aerial RGB imagery without requiring stereo baseline or LiDAR survey passes.</p>
+            </div>
+
+            <div class="pipeline-card glass-panel">
+                <div class="pipeline-step-num">02</div>
+                <div class="pipeline-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
+                </div>
+                <h3>Dual-Decoder MultiTaskNet</h3>
+                <p>Jointly estimates high-resolution building footprint masks (sigmoid) and per-pixel continuous building heights in meters.</p>
+            </div>
+
+            <div class="pipeline-card glass-panel">
+                <div class="pipeline-step-num">03</div>
+                <div class="pipeline-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>
+                </div>
+                <h3>Geometric Regularization</h3>
+                <p>OpenCV watershed boundary clustering, rotated minimum-area bounding, and Douglas-Peucker simplification produce clean architectural polygons.</p>
+            </div>
+
+            <div class="pipeline-card glass-panel">
+                <div class="pipeline-step-num">04</div>
+                <div class="pipeline-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <h3>3D LoD1 Mesh Synthesis</h3>
+                <p>Extrudes building footprints to real-world metric heights, computes Y-up coordinates, and exports standard Wavefront .OBJ 3D models.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture & Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-heading text-center">
+            <span class="section-tag">Core Capabilities</span>
+            <h2>Built for Geospatial AI & 3D City Modeling</h2>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card glass-panel">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                </div>
+                <h3>Interactive 3D WebGL Engine</h3>
+                <p>Full orbit camera controls, diffuse lighting, wireframe edge shaders, and ground reference grid powered by Three.js.</p>
+            </div>
+
+            <div class="feature-card glass-panel">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </div>
+                <h3>Direct .OBJ & Heightmap Export</h3>
+                <p>Instantly download clean 3D Wavefront .OBJ meshes and 16-bit normalized heightmaps for GIS, Blender, and game engines.</p>
+            </div>
+
+            <div class="feature-card glass-panel">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3>Calibrated nDSM Metrics</h3>
+                <p>Trained with normalized Digital Surface Models (nDSM) ground truth to ensure metric vertical scale in real meters.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action Banner -->
+    <section class="cta-section">
+        <div class="cta-card glass-panel text-center">
+            <h2>Ready to Reconstruct 3D Buildings?</h2>
+            <p>Test with our curated satellite samples or drag and drop your own aerial imagery.</p>
+            <div style="margin-top: 1.5rem;">
+                <a href="dashboard.html" class="btn-primary large">
+                    <span>Launch 3D Dashboard Now</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">Geo<span>3D</span></div>
+            <p class="footer-text">Monocular 3D Building Reconstruction &bull; PyTorch ResNet-18 &bull; Three.js &bull; FastAPI</p>
+            <p class="footer-sub">&copy; 2026 Geo3D. High-Performance Geospatial AI Pipeline.</p>
+        </div>
+    </footer>
 </body>
 </html>

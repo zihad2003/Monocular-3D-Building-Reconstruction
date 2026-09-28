@@ -70,6 +70,28 @@ document.addEventListener('DOMContentLoaded', () => {
         logMsg(`Loaded input image: ${file.name}`);
     }
 
+    // --- Quick Sample Buttons ---
+    document.querySelectorAll('.sample-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const sampleName = btn.dataset.sample;
+            logMsg(`Loading sample: ${sampleName}...`);
+            try {
+                const res = await fetch(`/test_samples/${sampleName}`);
+                if (!res.ok) throw new Error("Could not fetch sample");
+                const blob = await res.blob();
+                const file = new File([blob], sampleName, { type: "image/png" });
+                handleFile(file);
+                // Auto trigger generation
+                setTimeout(() => {
+                    if (generateBtn) generateBtn.click();
+                }, 300);
+            } catch (err) {
+                console.error(err);
+                logMsg(`Error loading sample: ${err.message}`);
+            }
+        });
+    });
+
     // --- Generate 3D Model API Call ---
     if (generateBtn) {
         generateBtn.addEventListener('click', async () => {

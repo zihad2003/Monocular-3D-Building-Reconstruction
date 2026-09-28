@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: geo3d-building-reconstruction
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: "chmod +x build.sh && ./build.sh"
+    startCommand: "python src/demo/server.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: PORT
+        value: "10000"
+    healthCheckPath: /
+    autoDeploy: true

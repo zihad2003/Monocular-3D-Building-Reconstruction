@@ -54,11 +54,20 @@ _model = None
 def get_model():
     global _model
     if _model is None:
-        ckpt_path = CHECKPOINT_PATH
-        if not ckpt_path.exists():
-            ckpt_path = ROOT / "checkpoints" / "bonai_pretrained.pt"
-        if not ckpt_path.exists():
-            raise RuntimeError(f"No model checkpoint found at {CHECKPOINT_PATH}")
+        possible_ckpts = [
+            CHECKPOINT_PATH,
+            ROOT / "checkpoints" / "best_model_40epochs.pt",
+            ROOT / "best_model_40epochs.pt",
+            ROOT / "checkpoints" / "bonai_pretrained.pt",
+        ]
+        ckpt_path = None
+        for p in possible_ckpts:
+            if p.exists() and p.stat().st_size > 1000:
+                ckpt_path = p
+                break
+
+        if ckpt_path is None:
+            raise RuntimeError(f"No model checkpoint found! Searched: {possible_ckpts}")
 
         print(f"Loading neural network weights from: {ckpt_path}")
         model = MultiTaskBuildingNet(encoder_name="resnet18", encoder_weights=None)
@@ -162,14 +171,22 @@ async def generate_3d(file: UploadFile = File(...)):
 # Mount outputs directory so frontend can fetch OBJ and PNGs
 app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
 
+# Mount test_samples directory
+TEST_SAMPLES_DIR = ROOT / "test_samples"
+if TEST_SAMPLES_DIR.exists():
+    app.mount("/test_samples", StaticFiles(directory=str(TEST_SAMPLES_DIR)), name="test_samples")
+
 # Mount web_ui as root static files
 app.mount("/", StaticFiles(directory=str(WEB_UI_DIR), html=True), name="web_ui")
 
 
-def run_server(port=8000):
+def run_server(port=None):
     import uvicorn
-    print(f"Starting Geo3D Server at http://localhost:{port}")
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
+    if port is None:
+        port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    print(f"Starting Geo3D Server at http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port, log_level="info")
 
 
 if __name__ == "__main__":

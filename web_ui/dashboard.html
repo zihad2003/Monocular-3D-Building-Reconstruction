@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geo3D Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <!-- Three.js 3D Engine & Loaders -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -17,10 +17,18 @@
         <aside class="sidebar glass-panel">
             <div class="logo">Geo<span>3D</span></div>
             <ul class="side-menu">
-                <li class="active"><a href="#">📊 Workspace</a></li>
-                <li><a href="#">📁 My Models</a></li>
-                <li><a href="#">⚙️ Settings</a></li>
-                <li><a href="index.html">🏠 Home</a></li>
+                <li class="active">
+                    <a href="#">
+                        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                        <span>Workspace</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="index.html">
+                        <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <span>Home</span>
+                    </a>
+                </li>
             </ul>
         </aside>
 
@@ -38,9 +46,33 @@
                 <div class="upload-section glass-panel">
                     <h3>Upload Satellite Image</h3>
                     <div class="upload-dropzone" id="dropzone">
-                        <span class="upload-icon">📥</span>
+                        <span class="upload-icon">
+                            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+                        </span>
                         <p>Drag and drop image here, or <strong>browse</strong></p>
                         <input type="file" id="file-upload" accept="image/*" hidden>
+                    </div>
+
+                    <!-- Instant Test Samples -->
+                    <div class="test-samples-bar" style="margin: 0.5rem 0 1rem 0;">
+                        <p style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                            Instant satellite test samples:
+                        </p>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button type="button" class="sample-btn" data-sample="01_tall_skyscraper_towers.png" style="display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); cursor: pointer;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8"/><path d="M18 9h2a2 2 0 0 1 2 2v11"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+                                <span>Skyscrapers</span>
+                            </button>
+                            <button type="button" class="sample-btn" data-sample="02_dense_commercial_downtown.png" style="display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); cursor: pointer;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+                                <span>Downtown</span>
+                            </button>
+                            <button type="button" class="sample-btn" data-sample="03_residential_houses_neighborhood.png" style="display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); cursor: pointer;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                <span>Neighborhood</span>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="process-controls">
@@ -66,14 +98,22 @@
 
                     <div class="viewer-container" id="viewer-container">
                         <div class="empty-state" id="empty-state">
-                            <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">🛰️</p>
-                            <p>Upload a satellite image and click <strong>Generate 3D Model</strong>.</p>
-                            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.4rem;">Model powered by BONAI + SynRS3D MultiTaskNet</p>
+                            <div class="empty-icon-wrapper" style="margin-bottom: 0.8rem;">
+                                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                                </svg>
+                            </div>
+                            <p style="font-weight: 500; font-size: 1rem; color: #e2e8f0;">Ready to Reconstruct</p>
+                            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.3rem;">Upload a satellite image or choose a test sample above to generate 3D geometry.</p>
+                            <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.6rem;">Powered by BONAI + SynRS3D MultiTaskNet (89.4% IoU, 2.98m MAE)</p>
                         </div>
                         <canvas id="three-canvas" style="display: none; width: 100%; height: 100%;"></canvas>
                         <img id="2d-preview" style="display: none; max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" alt="Preview">
-                        <div id="viewer-hint" style="display: none; position: absolute; bottom: 10px; left: 10px; font-size: 0.75rem; color: rgba(255,255,255,0.6); pointer-events: none; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px;">
-                            🖱️ Drag: Rotate | Right-Click: Pan | Scroll: Zoom
+                        <div id="viewer-hint" style="display: none; position: absolute; bottom: 10px; left: 10px; font-size: 0.75rem; color: rgba(255,255,255,0.7); pointer-events: none; background: rgba(0,0,0,0.65); padding: 5px 10px; border-radius: 6px; backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="7"/><path d="M12 6v4"/></svg>
+                            <span>Left-drag: Rotate | Right-drag: Pan | Scroll: Zoom</span>
                         </div>
                     </div>
 

@@ -1,4 +1,4 @@
-# Core ML / vision
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch>=2.0
 torchvision>=0.15
 numpy>=1.24
@@ -22,9 +22,10 @@ scipy>=1.11
 
 # Data / demo
 pycocotools==2.0.7
-gradio==4.36.1
 imageio==2.34.1
 PyYAML>=6.0
 
-# Optional mesh verification (skip if install fails)
-# open3d
+# Web Server (Render deployment)
+fastapi>=0.111
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9

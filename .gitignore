@@ -1,22 +1,21 @@
 /data/
 !src/data/
 outputs/
-checkpoints/
 __pycache__/
 *.pyc
 .venv/
 venv/
-*.pt
 *.obj
 .ipynb_checkpoints/
 _doc_extract.txt
 
 # Dataset ignores
-raw_data/**/*.png
-raw_data/**/*.jpg
-raw_data/**/*.jpeg
-raw_data/**/*.tif
-raw_data/**/*.tiff
-raw_data/**/*.npy
-data_package.zip
 raw_data/
+data_package.zip
+project_colab.zip
+
+# Model weights: Only track best_model.pt inside checkpoints/ (avoid duplicate 70MB files)
+best_model_40epochs.pt
+checkpoints/bonai_pretrained.pt
+checkpoints/best_model_40epochs.pt
+!checkpoints/best_model.pt
