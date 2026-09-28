@@ -15,20 +15,19 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import cv2
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import gc
+
+# Free up memory on single-core / low-RAM cloud instances
+torch.set_num_threads(1)
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
-from src.models.multitask_net import MultiTaskBuildingNet
-from src.reconstruction.predict import predict_mask_and_height
-from src.reconstruction.extrude import mask_and_height_to_3d_mesh
+
 
 app = FastAPI(title="Geo3D Neural Reconstruction Server")
 
@@ -70,10 +69,14 @@ def get_model():
             raise RuntimeError(f"No model checkpoint found! Searched: {possible_ckpts}")
 
         print(f"Loading neural network weights from: {ckpt_path}")
+        from src.models.multitask_net import MultiTaskBuildingNet
         model = MultiTaskBuildingNet(encoder_name="resnet18", encoder_weights=None)
         ckpt = torch.load(ckpt_path, map_location=DEVICE, weights_only=False)
         state_dict = ckpt.get("model_state", ckpt)
         model.load_state_dict(state_dict, strict=False)
+        del state_dict
+        del ckpt
+        gc.collect()
         model.to(DEVICE)
         model.eval()
         _model = model
@@ -95,6 +98,9 @@ async def generate_3d(file: UploadFile = File(...)):
     pil_img.save(input_path)
 
     # 2. Run neural network
+    from src.reconstruction.predict import predict_mask_and_height
+    from src.reconstruction.extrude import mask_and_height_to_3d_mesh
+
     model = get_model()
     mask_prob, mask_bin, height_m = predict_mask_and_height(model, image_rgb, DEVICE, mask_thresh=0.45)
 
@@ -108,18 +114,12 @@ async def generate_3d(file: UploadFile = File(...)):
     mask_path = OUTPUTS_DIR / "current_mask.png"
     Image.fromarray((mask_bin * 255).astype(np.uint8)).save(mask_path)
 
-    # 4. Save colormapped heightmap visualization
+    # 4. Save colormapped heightmap visualization (ultra-fast, 0 MB memory)
     height_vis_path = OUTPUTS_DIR / "current_height.png"
-    plt.figure(figsize=(6, 6))
-    plt.imshow(height_m, cmap="plasma", vmin=0, vmax=max(float(height_m.max()), 10.0))
-    cbar = plt.colorbar(fraction=0.046, pad=0.04)
-    cbar.set_label("Height (meters)", color="white")
-    cbar.ax.yaxis.set_tick_params(color="white")
-    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
-    plt.axis("off")
-    plt.tight_layout()
-    plt.savefig(height_vis_path, bbox_inches="tight", transparent=True, dpi=150)
-    plt.close()
+    max_h_val = max(float(height_m.max()), 10.0)
+    norm_h = np.clip((height_m / max_h_val) * 255.0, 0, 255).astype(np.uint8)
+    colored_bgr = cv2.applyColorMap(norm_h, cv2.COLORMAP_PLASMA)
+    cv2.imwrite(str(height_vis_path), colored_bgr)
 
     # 5. Run 3D Mesh Extrusion
     obj_path = OUTPUTS_DIR / "current_model.obj"
