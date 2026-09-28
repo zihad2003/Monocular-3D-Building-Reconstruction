@@ -29,7 +29,23 @@ from PIL import Image
 
 
 
+import threading
+
 app = FastAPI(title="Geo3D Neural Reconstruction Server")
+
+def _preload():
+    try:
+        print("Preloading neural network in background thread...")
+        get_model()
+        print("Neural network successfully preloaded and ready for instant inference!")
+    except Exception as e:
+        print(f"Preload note: {e}")
+
+@app.on_event("startup")
+def startup_event():
+    t = threading.Timer(1.0, _preload)
+    t.daemon = True
+    t.start()
 
 # Allow CORS for local dev
 app.add_middleware(

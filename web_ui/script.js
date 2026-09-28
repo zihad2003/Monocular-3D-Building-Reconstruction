@@ -107,52 +107,71 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append("file", currentFile);
 
-            try {
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    body: formData
-                });
+            let attempt = 0;
+            const maxAttempts = 2;
 
-                if (!response.ok) {
-                    throw new Error(`Server returned HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-                lastResult = data;
-
-                // Log steps returned by server
-                if (data.logs) {
-                    data.logs.forEach((msg, idx) => {
-                        setTimeout(() => logMsg(msg), idx * 300);
+            async function runInference() {
+                attempt++;
+                try {
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        body: formData
                     });
+
+                    if (!response.ok) {
+                        if (response.status === 502 && attempt < maxAttempts) {
+                            logMsg("Cloud instance is warming up its neural network (free tier). Retrying automatically in 4s...");
+                            await new Promise(r => setTimeout(r, 4000));
+                            return await runInference();
+                        }
+                        const errText = await response.text().catch(() => '');
+                        throw new Error(`Server returned HTTP ${response.status} ${errText ? ': ' + errText : ''}`);
+                    }
+
+                    const data = await response.json();
+                    if (!data.success && data.error) {
+                        throw new Error(data.error);
+                    }
+                    lastResult = data;
+
+                    // Log steps returned by server
+                    if (data.logs) {
+                        data.logs.forEach((msg, idx) => {
+                            setTimeout(() => logMsg(msg), idx * 250);
+                        });
+                    }
+
+                    // Update UI Stats
+                    if (data.stats) {
+                        modelStats.innerText = `Buildings: ${data.stats.buildings_detected} | Max H: ${data.stats.max_height_m}m | Mean H: ${data.stats.mean_height_m}m`;
+                    }
+
+                    // Setup Download Links
+                    downloadObjBtn.href = data.obj_url + `?t=${Date.now()}`;
+                    exportHeightBtn.href = data.height_url + `?t=${Date.now()}`;
+
+                    // Reveal Viewer
+                    emptyState.style.display = 'none';
+                    viewerTabs.style.display = 'flex';
+                    viewerActions.style.display = 'flex';
+
+                    // Render Three.js 3D Model
+                    show3DView();
+                    loadObjModel(data.obj_url + `?t=${Date.now()}`);
+
+                } catch (err) {
+                    console.error(err);
+                    logMsg(`Inference status: ${err.message}`);
+                    if (attempt >= maxAttempts) {
+                        logMsg("Note: The free tier server may still be downloading weights or warming up. Please try clicking Skyscrapers again in 10-15 seconds.");
+                    }
+                } finally {
+                    generateBtn.disabled = false;
+                    generateBtn.innerText = "Generate 3D Model";
                 }
-
-                // Update UI Stats
-                if (data.stats) {
-                    modelStats.innerText = `Buildings: ${data.stats.buildings_detected} | Max H: ${data.stats.max_height_m}m | Mean H: ${data.stats.mean_height_m}m`;
-                }
-
-                // Setup Download Links
-                downloadObjBtn.href = data.obj_url + `?t=${Date.now()}`;
-                exportHeightBtn.href = data.height_url + `?t=${Date.now()}`;
-
-                // Reveal Viewer
-                emptyState.style.display = 'none';
-                viewerTabs.style.display = 'flex';
-                viewerActions.style.display = 'flex';
-
-                // Render Three.js 3D Model
-                show3DView();
-                loadObjModel(data.obj_url + `?t=${Date.now()}`);
-
-            } catch (err) {
-                console.error(err);
-                logMsg(`Error during inference: ${err.message}`);
-                alert(`Error: ${err.message}. Ensure the python backend server is running.`);
-            } finally {
-                generateBtn.disabled = false;
-                generateBtn.innerText = "Generate 3D Model";
             }
+
+            await runInference();
         });
     }
 
