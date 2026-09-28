@@ -71,7 +71,7 @@ def get_model():
         print(f"Loading neural network weights from: {ckpt_path}")
         from src.models.multitask_net import MultiTaskBuildingNet
         model = MultiTaskBuildingNet(encoder_name="resnet18", encoder_weights=None)
-        ckpt = torch.load(ckpt_path, map_location=DEVICE, weights_only=False)
+        ckpt = torch.load(ckpt_path, map_location=DEVICE, mmap=True)
         state_dict = ckpt.get("model_state", ckpt)
         model.load_state_dict(state_dict, strict=False)
         del state_dict
@@ -83,6 +83,11 @@ def get_model():
     return _model
 
 
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok", "app": "Geo3D", "model_cached": _model is not None}
+
+
 @app.post("/api/generate")
 async def generate_3d(file: UploadFile = File(...)):
     """Receives satellite image, runs neural inference, extrudes 3D mesh, returns URLs."""
@@ -90,82 +95,90 @@ async def generate_3d(file: UploadFile = File(...)):
         content = await file.read()
         pil_img = Image.open(io.BytesIO(content)).convert("RGB")
         image_rgb = np.array(pil_img)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid image file: {e}")
 
-    # 1. Save original input
-    input_path = OUTPUTS_DIR / "current_input.png"
-    pil_img.save(input_path)
+        # 1. Save original input
+        input_path = OUTPUTS_DIR / "current_input.png"
+        pil_img.save(input_path)
 
-    # 2. Run neural network
-    from src.reconstruction.predict import predict_mask_and_height
-    from src.reconstruction.extrude import mask_and_height_to_3d_mesh
+        # 2. Run neural network
+        from src.reconstruction.predict import predict_mask_and_height
+        from src.reconstruction.extrude import mask_and_height_to_3d_mesh
 
-    model = get_model()
-    mask_prob, mask_bin, height_m = predict_mask_and_height(model, image_rgb, DEVICE, mask_thresh=0.45)
+        model = get_model()
+        mask_prob, mask_bin, height_m = predict_mask_and_height(model, image_rgb, DEVICE, mask_thresh=0.45)
 
-    # Clean mask noise with morphological closing/opening
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    clean_mask = cv2.morphologyEx(mask_bin.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
-    clean_mask = cv2.morphologyEx(clean_mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))
-    mask_bin = clean_mask > 0
+        # Clean mask noise with morphological closing/opening
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        clean_mask = cv2.morphologyEx(mask_bin.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
+        clean_mask = cv2.morphologyEx(clean_mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))
+        mask_bin = clean_mask > 0
 
-    # 3. Save mask visualization
-    mask_path = OUTPUTS_DIR / "current_mask.png"
-    Image.fromarray((mask_bin * 255).astype(np.uint8)).save(mask_path)
+        # 3. Save mask visualization
+        mask_path = OUTPUTS_DIR / "current_mask.png"
+        Image.fromarray((mask_bin * 255).astype(np.uint8)).save(mask_path)
 
-    # 4. Save colormapped heightmap visualization (ultra-fast, 0 MB memory)
-    height_vis_path = OUTPUTS_DIR / "current_height.png"
-    max_h_val = max(float(height_m.max()), 10.0)
-    norm_h = np.clip((height_m / max_h_val) * 255.0, 0, 255).astype(np.uint8)
-    colored_bgr = cv2.applyColorMap(norm_h, cv2.COLORMAP_PLASMA)
-    cv2.imwrite(str(height_vis_path), colored_bgr)
+        # 4. Save colormapped heightmap visualization (ultra-fast, 0 MB memory)
+        height_vis_path = OUTPUTS_DIR / "current_height.png"
+        max_h_val = max(float(height_m.max()), 10.0)
+        norm_h = np.clip((height_m / max_h_val) * 255.0, 0, 255).astype(np.uint8)
+        colored_bgr = cv2.applyColorMap(norm_h, cv2.COLORMAP_PLASMA)
+        cv2.imwrite(str(height_vis_path), colored_bgr)
 
-    # 5. Run 3D Mesh Extrusion
-    obj_path = OUTPUTS_DIR / "current_model.obj"
-    n_buildings = 0
-    mean_h = 0.0
-    max_h = 0.0
-
-    try:
-        _, n_buildings = mask_and_height_to_3d_mesh(
-            image_rgb=image_rgb,
-            mask_bin=mask_bin,
-            height_m=height_m,
-            output_path=obj_path,
-            min_area_px=60,
-            separate_touching=True,
-            watershed_min_distance=12,
-        )
-        if mask_bin.sum() > 0:
-            mean_h = float(height_m[mask_bin > 0].mean())
-            max_h = float(height_m[mask_bin > 0].max())
-    except Exception as err:
-        print(f"Extrusion note: {err}")
-        # If no buildings met min_area, create flat terrain/placeholder mesh
-        import trimesh
-        box = trimesh.creation.box(extents=[10, 10, 0.5])
-        box.export(str(obj_path))
+        # 5. Run 3D Mesh Extrusion
+        obj_path = OUTPUTS_DIR / "current_model.obj"
         n_buildings = 0
+        mean_h = 0.0
+        max_h = 0.0
 
-    return {
-        "success": True,
-        "obj_url": "/outputs/current_model.obj",
-        "mask_url": "/outputs/current_mask.png",
-        "height_url": "/outputs/current_height.png",
-        "stats": {
-            "buildings_detected": int(n_buildings),
-            "mean_height_m": round(mean_h, 1),
-            "max_height_m": round(max_h, 1),
-        },
-        "logs": [
-            f"Image loaded: {file.filename} ({image_rgb.shape[1]}x{image_rgb.shape[0]}px)",
-            "Running footprint segmentation (BONAI pre-trained backbone)...",
-            f"Estimated heights via DSM regression: max {round(max_h, 1)}m, mean {round(mean_h, 1)}m",
-            f"Extruded {n_buildings} building polygons into textured 3D mesh.",
-            "Generation complete! Rendering in Three.js interactive viewer.",
-        ],
-    }
+        try:
+            _, n_buildings = mask_and_height_to_3d_mesh(
+                image_rgb=image_rgb,
+                mask_bin=mask_bin,
+                height_m=height_m,
+                output_path=obj_path,
+                min_area_px=60,
+                separate_touching=True,
+                watershed_min_distance=12,
+            )
+            if mask_bin.sum() > 0:
+                mean_h = float(height_m[mask_bin > 0].mean())
+                max_h = float(height_m[mask_bin > 0].max())
+        except Exception as err:
+            print(f"Extrusion note: {err}")
+            import trimesh
+            box = trimesh.creation.box(extents=[10, 10, 0.5])
+            box.export(str(obj_path))
+            n_buildings = 0
+
+        return {
+            "success": True,
+            "obj_url": "/outputs/current_model.obj",
+            "mask_url": "/outputs/current_mask.png",
+            "height_url": "/outputs/current_height.png",
+            "stats": {
+                "buildings_detected": int(n_buildings),
+                "mean_height_m": round(mean_h, 1),
+                "max_height_m": round(max_h, 1),
+            },
+            "logs": [
+                f"Image loaded: {file.filename} ({image_rgb.shape[1]}x{image_rgb.shape[0]}px)",
+                "Running footprint segmentation (BONAI pre-trained backbone)...",
+                f"Estimated heights via DSM regression: max {round(max_h, 1)}m, mean {round(mean_h, 1)}m",
+                f"Extruded {n_buildings} building polygons into textured 3D mesh.",
+                "Generation complete! Rendering in Three.js interactive viewer.",
+            ],
+        }
+    except Exception as err:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(err),
+                "logs": [f"Server processing error: {err}"]
+            }
+        )
 
 
 # Mount outputs directory so frontend can fetch OBJ and PNGs
