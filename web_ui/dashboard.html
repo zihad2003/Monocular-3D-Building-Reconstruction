@@ -6,6 +6,10 @@
     <title>Geo3D Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Three.js 3D Engine & Loaders -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 </head>
 <body class="dashboard-body">
     <div class="dashboard-container">
@@ -41,9 +45,9 @@
                     
                     <div class="process-controls">
                         <label>Target Level of Detail:</label>
-                        <select class="styled-select">
-                            <option>LoD1 (Block Extrusion)</option>
-                            <option>LoD2 (Roof Topology) - Beta</option>
+                        <select class="styled-select" id="lod-select">
+                            <option value="lod1">LoD1 (Block Extrusion + Textures)</option>
+                            <option value="lod2">LoD2 (Roof Topology) - Experimental</option>
                         </select>
                         <button class="btn-primary full-width" id="generate-btn">Generate 3D Model</button>
                     </div>
@@ -51,15 +55,32 @@
 
                 <!-- Preview Area -->
                 <div class="preview-section glass-panel">
-                    <h3>3D Viewer</h3>
-                    <div class="viewer-container" id="viewer-container">
-                        <div class="empty-state">
-                            <p>Upload an image and hit Generate to see the 3D model.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>3D Viewer</h3>
+                        <div class="viewer-tabs" id="viewer-tabs" style="display: none; gap: 0.5rem;">
+                            <button class="tab-btn active" id="tab-3d" style="padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; background: #3b82f6; color: white; border: none;">3D Mesh</button>
+                            <button class="tab-btn" id="tab-mask" style="padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">Footprint</button>
+                            <button class="tab-btn" id="tab-height" style="padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">Heightmap</button>
                         </div>
                     </div>
+
+                    <div class="viewer-container" id="viewer-container">
+                        <div class="empty-state" id="empty-state">
+                            <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">🛰️</p>
+                            <p>Upload a satellite image and click <strong>Generate 3D Model</strong>.</p>
+                            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.4rem;">Model powered by BONAI + SynRS3D MultiTaskNet</p>
+                        </div>
+                        <canvas id="three-canvas" style="display: none; width: 100%; height: 100%;"></canvas>
+                        <img id="2d-preview" style="display: none; max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" alt="Preview">
+                        <div id="viewer-hint" style="display: none; position: absolute; bottom: 10px; left: 10px; font-size: 0.75rem; color: rgba(255,255,255,0.6); pointer-events: none; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px;">
+                            🖱️ Drag: Rotate | Right-Click: Pan | Scroll: Zoom
+                        </div>
+                    </div>
+
                     <div class="viewer-actions" style="display: none;" id="viewer-actions">
-                        <button class="btn-secondary">Download .OBJ</button>
-                        <button class="btn-secondary">Export Heightmap</button>
+                        <span id="model-stats" style="margin-right: auto; font-size: 0.85rem; color: #94a3b8; align-self: center;"></span>
+                        <a id="download-obj-btn" class="btn-secondary" download="building_model.obj" href="#">Download .OBJ</a>
+                        <a id="export-height-btn" class="btn-secondary" download="heightmap.png" href="#">Export Heightmap</a>
                     </div>
                 </div>
             </div>
@@ -68,7 +89,8 @@
             <div class="log-section glass-panel">
                 <h3>Inference Log</h3>
                 <div class="log-console" id="log-console">
-                    <p class="sys-msg">System ready.</p>
+                    <p class="sys-msg">> Model weights loaded: checkpoints/best_model.pt (PyTorch ResNet-18)</p>
+                    <p class="sys-msg">> System ready for inference.</p>
                 </div>
             </div>
         </main>

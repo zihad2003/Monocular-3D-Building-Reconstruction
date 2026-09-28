@@ -1,15 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Dashboard Logic
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-upload');
     const generateBtn = document.getElementById('generate-btn');
     const logConsole = document.getElementById('log-console');
     const viewerContainer = document.getElementById('viewer-container');
     const viewerActions = document.getElementById('viewer-actions');
+    const viewerTabs = document.getElementById('viewer-tabs');
+    const emptyState = document.getElementById('empty-state');
+    const threeCanvas = document.getElementById('three-canvas');
+    const previewImg2D = document.getElementById('2d-preview');
+    const viewerHint = document.getElementById('viewer-hint');
+    const modelStats = document.getElementById('model-stats');
+    const downloadObjBtn = document.getElementById('download-obj-btn');
+    const exportHeightBtn = document.getElementById('export-height-btn');
 
-    if(dropzone) {
+    const tab3D = document.getElementById('tab-3d');
+    const tabMask = document.getElementById('tab-mask');
+    const tabHeight = document.getElementById('tab-height');
+
+    let currentFile = null;
+    let lastResult = null;
+
+    // Three.js State
+    let scene = null;
+    let camera = null;
+    let renderer = null;
+    let controls = null;
+    let currentMesh = null;
+    let animationFrameId = null;
+
+    // --- Drag and Drop File Upload ---
+    if (dropzone) {
         dropzone.addEventListener('click', () => fileInput.click());
-        
+
         dropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropzone.style.borderColor = '#3b82f6';
@@ -22,52 +45,269 @@ document.addEventListener('DOMContentLoaded', () => {
         dropzone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
-            if(e.dataTransfer.files.length) {
+            if (e.dataTransfer.files.length) {
                 handleFile(e.dataTransfer.files[0]);
             }
         });
 
-        fileInput.addEventListener('change', function() {
-            if(this.files.length) {
+        fileInput.addEventListener('change', function () {
+            if (this.files.length) {
                 handleFile(this.files[0]);
             }
         });
     }
 
     function handleFile(file) {
-        dropzone.innerHTML = `<span class="upload-icon">✅</span><p>${file.name} ready for processing.</p>`;
-        logMsg(`File loaded: ${file.name}`);
+        currentFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            dropzone.innerHTML = `
+                <img src="${e.target.result}" style="max-height: 120px; max-width: 100%; border-radius: 8px; margin-bottom: 0.5rem; object-fit: contain;">
+                <p><strong>${file.name}</strong> ready (${(file.size / 1024).toFixed(1)} KB)</p>
+            `;
+        };
+        reader.readAsDataURL(file);
+        logMsg(`Loaded input image: ${file.name}`);
     }
 
-    if(generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            logMsg("Initializing neural network backend...");
+    // --- Generate 3D Model API Call ---
+    if (generateBtn) {
+        generateBtn.addEventListener('click', async () => {
+            if (!currentFile) {
+                alert("Please select or drop a satellite image first.");
+                return;
+            }
+
             generateBtn.disabled = true;
-            generateBtn.innerText = "Processing...";
-            
-            setTimeout(() => logMsg("Running footprint segmentation (BONAI pre-trained)..."), 1000);
-            setTimeout(() => logMsg("Estimating height maps via DSM regression..."), 2500);
-            setTimeout(() => logMsg("Extruding 2D polygons to 3D meshes..."), 4000);
-            
-            setTimeout(() => {
-                logMsg("Generation complete! Rendering in viewer.");
+            generateBtn.innerText = "Reconstructing 3D...";
+            logMsg("Sending image to neural network inference server...");
+
+            const formData = new FormData();
+            formData.append("file", currentFile);
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                lastResult = data;
+
+                // Log steps returned by server
+                if (data.logs) {
+                    data.logs.forEach((msg, idx) => {
+                        setTimeout(() => logMsg(msg), idx * 300);
+                    });
+                }
+
+                // Update UI Stats
+                if (data.stats) {
+                    modelStats.innerText = `Buildings: ${data.stats.buildings_detected} | Max H: ${data.stats.max_height_m}m | Mean H: ${data.stats.mean_height_m}m`;
+                }
+
+                // Setup Download Links
+                downloadObjBtn.href = data.obj_url + `?t=${Date.now()}`;
+                exportHeightBtn.href = data.height_url + `?t=${Date.now()}`;
+
+                // Reveal Viewer
+                emptyState.style.display = 'none';
+                viewerTabs.style.display = 'flex';
+                viewerActions.style.display = 'flex';
+
+                // Render Three.js 3D Model
+                show3DView();
+                loadObjModel(data.obj_url + `?t=${Date.now()}`);
+
+            } catch (err) {
+                console.error(err);
+                logMsg(`Error during inference: ${err.message}`);
+                alert(`Error: ${err.message}. Ensure the python backend server is running.`);
+            } finally {
                 generateBtn.disabled = false;
                 generateBtn.innerText = "Generate 3D Model";
-                
-                // Simulate loading a 3D model
-                viewerContainer.innerHTML = `<div style="text-align:center; color:#3b82f6;">
-                    <p style="font-size:3rem; margin-bottom:1rem; animation: pulse 2s infinite;">🧊</p>
-                    <p>Interactive 3D Render Here</p>
-                    <p style="font-size:0.8rem; color:#94a3b8;">(Requires Three.js Integration)</p>
-                </div>`;
-                viewerActions.style.display = 'flex';
-                viewerContainer.style.background = 'rgba(59, 130, 246, 0.1)';
-            }, 5500);
+            }
         });
     }
 
+    // --- Tab Switching ---
+    tab3D.addEventListener('click', () => {
+        setTabActive(tab3D);
+        show3DView();
+    });
+
+    tabMask.addEventListener('click', () => {
+        if (!lastResult) return;
+        setTabActive(tabMask);
+        show2DView(lastResult.mask_url);
+    });
+
+    tabHeight.addEventListener('click', () => {
+        if (!lastResult) return;
+        setTabActive(tabHeight);
+        show2DView(lastResult.height_url);
+    });
+
+    function setTabActive(activeBtn) {
+        [tab3D, tabMask, tabHeight].forEach(btn => {
+            btn.style.background = 'rgba(255,255,255,0.1)';
+            btn.style.border = '1px solid rgba(255,255,255,0.2)';
+        });
+        activeBtn.style.background = '#3b82f6';
+        activeBtn.style.border = 'none';
+    }
+
+    function show3DView() {
+        threeCanvas.style.display = 'block';
+        previewImg2D.style.display = 'none';
+        viewerHint.style.display = 'block';
+        if (renderer && camera) {
+            onWindowResize();
+        }
+    }
+
+    function show2DView(imgUrl) {
+        threeCanvas.style.display = 'none';
+        previewImg2D.style.display = 'block';
+        viewerHint.style.display = 'none';
+        previewImg2D.src = imgUrl + `?t=${Date.now()}`;
+    }
+
+    // --- Three.js Scene Setup & Model Loading ---
+    function initThree() {
+        if (renderer) return;
+
+        const width = viewerContainer.clientWidth;
+        const height = viewerContainer.clientHeight;
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x070b14);
+
+        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 2000);
+        camera.position.set(60, 80, 100);
+
+        renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.05; // Don't go below ground
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xfff3e0, 0.9);
+        dirLight1.position.set(50, 100, 50);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x80d8ff, 0.4);
+        dirLight2.position.set(-50, 50, -50);
+        scene.add(dirLight2);
+
+        // Ground Grid
+        const grid = new THREE.GridHelper(200, 40, 0x3b82f6, 0x1e293b);
+        grid.position.y = -0.1;
+        scene.add(grid);
+
+        window.addEventListener('resize', onWindowResize);
+
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    }
+
+    function onWindowResize() {
+        if (!renderer || !camera) return;
+        const width = viewerContainer.clientWidth;
+        const height = viewerContainer.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }
+
+    function loadObjModel(url) {
+        initThree();
+
+        if (currentMesh) {
+            scene.remove(currentMesh);
+            currentMesh = null;
+        }
+
+        const loader = new THREE.OBJLoader();
+        loader.load(
+            url,
+            (obj) => {
+                // Apply realistic architectural styling to each building mesh
+                obj.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+
+                        // Modern clean architectural building material
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: 0xf1f5f9,      // Crisp off-white architectural concrete
+                            roughness: 0.45,
+                            metalness: 0.1,
+                            side: THREE.DoubleSide
+                        });
+
+                        // Crisp architectural edge lines (like Google Earth 3D / SketchUp models)
+                        try {
+                            const edges = new THREE.EdgesGeometry(child.geometry, 28);
+                            const edgeLine = new THREE.LineSegments(
+                                edges,
+                                new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 1.5 })
+                            );
+                            child.add(edgeLine);
+                        } catch (e) {
+                            // Skip edges if geometry is non-standard
+                        }
+                    }
+                });
+
+                // Compute bounding box and center object cleanly
+                const box = new THREE.Box3().setFromObject(obj);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+
+                obj.position.x -= center.x;
+                obj.position.y -= box.min.y; // Sit flat on ground
+                obj.position.z -= center.z;
+
+                scene.add(obj);
+                currentMesh = obj;
+
+                // Position camera with beautiful 45-degree bird's-eye architectural perspective
+                const maxDim = Math.max(size.x, size.z, 20);
+                camera.position.set(maxDim * 1.1, maxDim * 1.3, maxDim * 1.4);
+                controls.target.set(0, size.y * 0.4, 0);
+                controls.update();
+
+                logMsg("3D architectural mesh loaded successfully into viewer.");
+            },
+            (xhr) => {
+                // Progress
+            },
+            (err) => {
+                console.error("OBJ Load Error:", err);
+                logMsg("Warning: Could not render OBJ in Three.js.");
+            }
+        );
+    }
+
     function logMsg(msg) {
-        if(!logConsole) return;
+        if (!logConsole) return;
         const p = document.createElement('p');
         p.innerText = `> ${msg}`;
         logConsole.appendChild(p);

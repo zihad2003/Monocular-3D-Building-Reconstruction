@@ -22,9 +22,12 @@ def run_epoch(model, loader, criterion, device, optimizer=None):
     agg = {"loss": 0.0, "iou": 0.0, "f1": 0.0, "height_mae_m": 0.0, "height_rmse_m": 0.0}
     n_batches = 0
 
+    from tqdm import tqdm
+    
     context = torch.enable_grad() if is_train else torch.no_grad()
     with context:
-        for batch in loader:
+        pbar = tqdm(loader, desc="Train" if is_train else "Val")
+        for batch in pbar:
             images = batch["image"].to(device, non_blocking=True)
             masks = batch["mask"].to(device, non_blocking=True)
             heights = batch["height"].to(device, non_blocking=True)

@@ -70,6 +70,13 @@ def main():
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--encoder", type=str, default=None)
+    parser.add_argument("--data-root", type=str, default=None, help="Dataset directory (e.g. data/bonai, data/synrs3d)")
+    parser.add_argument("--init-weights", type=str, default=None, help="Path to checkpoint to initialize model weights from")
+    parser.add_argument("--checkpoint-name", type=str, default=None, help="Output checkpoint filename")
+    parser.add_argument("--w-seg", type=float, default=None, help="Segmentation loss weight")
+    parser.add_argument("--w-height", type=float, default=None, help="Height loss weight (0.0 for footprint pretrain, 1.0 for height finetune)")
+    parser.add_argument("--max-train-samples", type=int, default=None, help="Optional cap on training samples")
+    parser.add_argument("--max-val-samples", type=int, default=None, help="Optional cap on validation samples")
     args = parser.parse_args()
 
     cfg = load_config(Path(args.config))
@@ -79,12 +86,26 @@ def main():
         cfg["train"]["batch_size"] = args.batch_size
     if args.encoder is not None:
         cfg["model"]["encoder_name"] = args.encoder
+    if args.data_root is not None:
+        cfg["data"]["root"] = args.data_root
+        cfg["data"]["use_synthetic"] = False
+    if args.checkpoint_name is not None:
+        cfg["paths"]["checkpoint_name"] = args.checkpoint_name
+    if args.w_seg is not None:
+        cfg["train"]["w_seg"] = args.w_seg
+    if args.w_height is not None:
+        cfg["train"]["w_height"] = args.w_height
 
     set_seed(int(cfg.get("seed", 42)))
     device = get_device()
     print(f"Device: {device}")
 
     data_dir, train_ids, val_ids = ensure_splits(cfg)
+    if args.max_train_samples and args.max_train_samples < len(train_ids):
+        train_ids = train_ids[:args.max_train_samples]
+    if args.max_val_samples and args.max_val_samples < len(val_ids):
+        val_ids = val_ids[:args.max_val_samples]
+
     img_size = int(cfg.get("img_size", 256))
     max_h = float(cfg.get("max_height_m", 60.0))
 
@@ -94,7 +115,7 @@ def main():
     val_ds = SatelliteBuildingDataset(
         data_dir, val_ids, img_size=img_size, augment=False, max_height_m=max_h
     )
-    print(f"Train samples: {len(train_ds)} | Val samples: {len(val_ds)}")
+    print(f"Train samples: {len(train_ds)} | Val samples: {len(val_ds)} (from {data_dir})")
 
     encoder_name = cfg["model"]["encoder_name"]
     model = MultiTaskBuildingNet(
@@ -102,7 +123,17 @@ def main():
         encoder_weights=cfg["model"].get("encoder_weights", "imagenet"),
     )
 
+    if args.init_weights and Path(args.init_weights).exists():
+        print(f"Loading initial weights from {args.init_weights}")
+        ckpt_data = torch.load(args.init_weights, map_location=device)
+        state_dict = ckpt_data.get("model_state", ckpt_data)
+        model.load_state_dict(state_dict, strict=False)
+
     ckpt = checkpoints_dir() / cfg["paths"].get("checkpoint_name", "best_model.pt")
+    w_seg = float(cfg["train"].get("w_seg", 1.0))
+    w_height = float(cfg["train"].get("w_height", 1.0))
+    print(f"Loss weights: w_seg={w_seg}, w_height={w_height}")
+
     history = train_model(
         model,
         train_ds,
@@ -112,8 +143,8 @@ def main():
         lr=float(cfg["train"]["lr"]),
         weight_decay=float(cfg["train"].get("weight_decay", 1e-4)),
         num_workers=int(cfg["train"].get("num_workers", 0)),
-        w_seg=float(cfg["train"].get("w_seg", 1.0)),
-        w_height=float(cfg["train"].get("w_height", 1.0)),
+        w_seg=w_seg,
+        w_height=w_height,
         checkpoint_path=ckpt,
         encoder_name=encoder_name,
         max_height_m=max_h,
@@ -121,7 +152,8 @@ def main():
         device=device,
     )
 
-    hist_path = checkpoints_dir() / "history.json"
+    hist_stem = Path(cfg["paths"].get("checkpoint_name", "best_model.pt")).stem
+    hist_path = checkpoints_dir() / f"history_{hist_stem}.json"
     hist_path.write_text(json.dumps(history, indent=2), encoding="utf-8")
     print(f"History saved -> {hist_path}")
 

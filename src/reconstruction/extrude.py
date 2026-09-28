@@ -59,12 +59,28 @@ def mask_and_height_to_3d_mesh(
             continue
 
         cnt_pts = cnt.reshape(-1, 2).astype(np.float64)
-        poly = Polygon(cnt_pts)
+        
+        # Architectural Regularization (straighten walls & orthogonalize)
+        rect = cv2.minAreaRect(cnt)
+        rect_box = cv2.boxPoints(rect)
+        rect_w, rect_h = rect[1]
+        rect_area = rect_w * rect_h
+        area = cv2.contourArea(cnt)
+
+        # If approximately rectangular (ratio > 0.65), snap to crisp rotated bounding box
+        if area / max(rect_area, 1e-5) > 0.65 and rect_w > 4 and rect_h > 4:
+            poly = Polygon(rect_box)
+        else:
+            # Simplify polygon to snap into straight orthogonal walls
+            peri = cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, 0.025 * peri, True)
+            if len(approx) >= 3:
+                poly = Polygon(approx.reshape(-1, 2))
+            else:
+                poly = Polygon(rect_box)
+
         if not poly.is_valid:
             poly = poly.buffer(0)
-        if poly.is_empty:
-            continue
-        poly = poly.simplify(simplify_tolerance, preserve_topology=True)
         if poly.is_empty or poly.area < min_area_px or not poly.is_valid:
             continue
 
@@ -91,58 +107,6 @@ def mask_and_height_to_3d_mesh(
         x1, y1 = int(min(maxx, w_img)), int(min(maxy, h_img))
         x1, y1 = max(x1, x0 + 1), max(y1, y0 + 1)
         crop = image_rgb[y0:y1, x0:x1]
-        tex_img = Image.fromarray(crop.astype(np.uint8))
-
-        # --- AUTOMATIC WALL TEXTURING ---
-        # Unmerge vertices so roof and walls can have different UVs without conflict
-        mesh.unmerge_vertices()
-        verts = mesh.vertices
-        faces = mesh.faces
-        face_normals = mesh.face_normals
-        
-        # Create Texture Atlas (Top: Roof Crop, Bottom: Procedural Wall with Windows)
-        ch, cw = crop.shape[:2]
-        wall_tex = np.full((ch, cw, 3), [220, 220, 225], dtype=np.uint8) # Concrete gray
-        # Draw window grid
-        win_w, win_h = max(cw // 8, 2), max(ch // 8, 2)
-        pad_x, pad_y = max(cw // 16, 1), max(ch // 16, 1)
-        for wy in range(pad_y, ch, win_h + pad_y):
-            for wx in range(pad_x, cw, win_w + pad_x):
-                end_y, end_x = min(wy + win_h, ch), min(wx + win_w, cw)
-                wall_tex[wy:end_y, wx:end_x] = [40, 50, 60] # Dark glass
-                
-        atlas_np = np.vstack([crop, wall_tex])
-        tex_img = Image.fromarray(atlas_np)
-        
-        span_x_m = span_x_px * meters_per_pixel
-        span_y_m = span_y_px * meters_per_pixel
-        
-        uvs = np.zeros((len(verts), 2))
-        
-        for i, face in enumerate(faces):
-            normal = face_normals[i]
-            v_idx = face
-            face_verts = verts[v_idx]
-            
-            if normal[2] > 0.5:
-                # Roof: Map to top half of atlas (V: 0.5 to 1.0)
-                u = np.clip(face_verts[:, 0] / max(span_x_m, 1e-6), 0.0, 1.0)
-                v = 1.0 - np.clip(face_verts[:, 1] / max(span_y_m, 1e-6), 0.0, 1.0)
-                uvs[v_idx, 0] = u
-                uvs[v_idx, 1] = (v * 0.5) + 0.5
-            else:
-                # Wall: Map to bottom half of atlas (V: 0.0 to 0.5)
-                # Use dominant axis for U to prevent stretching
-                if abs(normal[0]) > abs(normal[1]):
-                    u = np.clip(face_verts[:, 1] / max(span_y_m, 1e-6), 0.0, 1.0)
-                else:
-                    u = np.clip(face_verts[:, 0] / max(span_x_m, 1e-6), 0.0, 1.0)
-                # Z goes from 0 to height_val
-                v = np.clip(face_verts[:, 2] / max(height_val, 1e-6), 0.0, 1.0)
-                uvs[v_idx, 0] = u
-                uvs[v_idx, 1] = v * 0.5
-                
-        mesh.visual = trimesh.visual.TextureVisuals(uv=uvs, image=tex_img)
 
         world_x = minx * meters_per_pixel
         world_y = (h_img - maxy) * meters_per_pixel
@@ -158,9 +122,23 @@ def mask_and_height_to_3d_mesh(
         )
 
     scene_mesh = trimesh.util.concatenate(meshes) if n_buildings > 1 else meshes[0]
+
+    # --- ORIENTATION & CENTERING FOR 3D ENGINE (Three.js / WebGL Y-Up) ---
+    # In OpenCV/Shapely, Z is height. In Three.js, Y is Up and X-Z is ground plane.
+    # Rotate -90 degrees around X so height points straight UP (+Y):
+    rot_x = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])
+    scene_mesh.apply_transform(rot_x)
+
+    # Center model on ground plane at (0, 0) and sit bottom firmly at Y = 0.0
+    bounds = scene_mesh.bounds
+    center_x = (bounds[0][0] + bounds[1][0]) / 2.0
+    center_z = (bounds[0][2] + bounds[1][2]) / 2.0
+    min_y = bounds[0][1]
+    scene_mesh.apply_translation([-center_x, -min_y, -center_z])
+
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     scene_mesh.export(str(output_path))
 
-    print(f"Exported {n_buildings} building(s) -> {output_path}")
+    print(f"Exported {n_buildings} architectural building(s) -> {output_path}")
     return str(output_path), n_buildings

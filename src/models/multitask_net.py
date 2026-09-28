@@ -55,8 +55,8 @@ class MultiTaskBuildingNet(nn.Module):
 
     def forward(self, x):
         features = self.encoder(x)
-        seg_feat = self.seg_decoder(*features)
-        height_feat = self.height_decoder(*features)
+        seg_feat = self.seg_decoder(features)
+        height_feat = self.height_decoder(features)
 
         mask_logits = self.seg_head(seg_feat)
         height_map = F.softplus(self.height_head(height_feat))
