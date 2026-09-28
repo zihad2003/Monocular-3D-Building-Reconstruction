@@ -22,6 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Determine API root: if opened locally via file://, point to http://127.0.0.1:8000
+    const API_BASE = (window.location.protocol === 'file:' || !window.location.host)
+        ? 'http://127.0.0.1:8000'
+        : '';
+
     const tab3D = document.getElementById('tab-3d');
     const tabMask = document.getElementById('tab-mask');
     const tabHeight = document.getElementById('tab-height');
@@ -84,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const sampleName = btn.dataset.sample;
             logMsg(`Loading sample: ${sampleName}...`);
             try {
-                const res = await fetch(`/test_samples/${sampleName}`);
+                const res = await fetch(`${API_BASE}/test_samples/${sampleName}`);
                 if (!res.ok) throw new Error("Could not fetch sample");
                 const blob = await res.blob();
                 const file = new File([blob], sampleName, { type: "image/png" });
@@ -95,7 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 300);
             } catch (err) {
                 console.error(err);
-                logMsg(`Error loading sample: ${err.message}`);
+                if (window.location.protocol === 'file:') {
+                    logMsg(`Error loading sample: Failed to connect to server at ${API_BASE}. Make sure the server is started with: python src/demo/server.py`);
+                } else {
+                    logMsg(`Error loading sample: ${err.message}`);
+                }
             }
         });
     });
@@ -123,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             async function runInference() {
                 attempt++;
                 try {
-                    const response = await fetch('/api/generate', {
+                    const response = await fetch(`${API_BASE}/api/generate`, {
                         method: 'POST',
                         body: formData
                     });
@@ -162,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     // Setup Download Links
-                    downloadObjBtn.href = data.obj_url + `?t=${Date.now()}`;
-                    exportHeightBtn.href = data.height_url + `?t=${Date.now()}`;
+                    downloadObjBtn.href = `${API_BASE}${data.obj_url}?t=${Date.now()}`;
+                    exportHeightBtn.href = `${API_BASE}${data.height_url}?t=${Date.now()}`;
 
                     // Reveal Viewer
                     emptyState.style.display = 'none';
@@ -172,19 +181,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Render Three.js 3D Model
                     show3DView();
-                    loadObjModel(data.obj_url + `?t=${Date.now()}`);
+                    loadObjModel(`${API_BASE}${data.obj_url}?t=${Date.now()}`);
 
                 } catch (err) {
                     console.error(err);
+                    const isNetworkErr = err.message.includes("Failed to fetch") || err.message.includes("NetworkError") || (err.name === "TypeError");
+                    if (isNetworkErr && attempt < maxAttempts) {
+                        logMsg(`server waking up (free tier)... (attempt ${attempt}/${maxAttempts}, retrying in 5s)`);
+                        await new Promise(r => setTimeout(r, 5000));
+                        return await runInference();
+                    }
+
                     logMsg(`Inference notice: ${err.message}`);
                     if (err.message.includes("No buildings detected")) {
                         alert("No buildings detected in this image. Please upload a satellite image containing building footprints.");
                     } else if (attempt >= maxAttempts) {
-                        logMsg("Server did not respond after multiple wake-up retries. Please check back in a moment.");
+                        logMsg(`Server did not respond. If running locally, please ensure 'python src/demo/server.py' is running at http://127.0.0.1:8000.`);
                     }
                 } finally {
-                    generateBtn.disabled = false;
-                    generateBtn.innerText = "Generate 3D Model";
+                    if (attempt >= maxAttempts || (lastResult && lastResult.success)) {
+                        generateBtn.disabled = false;
+                        generateBtn.innerText = "Generate 3D Model";
+                    }
                 }
             }
 
@@ -232,7 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
         threeCanvas.style.display = 'none';
         previewImg2D.style.display = 'block';
         viewerHint.style.display = 'none';
-        previewImg2D.src = imgUrl + `?t=${Date.now()}`;
+        const fullUrl = imgUrl.startsWith('http') ? imgUrl : `${API_BASE}${imgUrl}`;
+        previewImg2D.src = fullUrl + `?t=${Date.now()}`;
     }
 
     // --- Three.js Scene Setup & Model Loading ---
