@@ -23,7 +23,7 @@ class DiceLoss(nn.Module):
 class MultiTaskLoss(nn.Module):
     """total = w_seg * (BCE + Dice) + w_height * MaskedSmoothL1."""
 
-    def __init__(self, w_seg: float = 1.0, w_height: float = 1.0, huber_beta: float = 0.05):
+    def __init__(self, w_seg: float = 1.0, w_height: float = 10.0, huber_beta: float = 0.05):
         super().__init__()
         self.bce = nn.BCEWithLogitsLoss()
         self.dice = DiceLoss()

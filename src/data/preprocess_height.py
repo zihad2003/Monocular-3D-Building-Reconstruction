@@ -41,6 +41,7 @@ def preprocess_real_height_data(
     os.makedirs(os.path.join(out_root, "heights"), exist_ok=True)
 
     ids = []
+    scene_to_tiles: dict[str, list[str]] = {}
     has_masks = mask_paths is not None and len(mask_paths) == len(image_paths)
 
     for idx, (img_p, dsm_p) in enumerate(zip(image_paths, dsm_paths)):
@@ -77,13 +78,25 @@ def preprocess_real_height_data(
                         raw_mask = raw_mask[:, :, 0]
                     if raw_mask.shape[:2] != (h, w):
                         raw_mask = cv2.resize(raw_mask, (w, h), interpolation=cv2.INTER_NEAREST)
-                    # SynRS3D uses class 8 for buildings; if not SynRS3D, threshold > 0
-                    if building_class_id in np.unique(raw_mask):
+
+                    vals, counts = np.unique(raw_mask, return_counts=True)
+                    if idx < 20:
+                        hist_str = ", ".join(f"class {int(v)}: {int(c)}px" for v, c in zip(vals, counts))
+                        print(f"[Mask Hist {idx + 1}/20] {Path(m_p).name}: {hist_str}")
+
+                    # SynRS3D uses class 8 for buildings (verified from SynRS3D official docs).
+                    # Explicit validation: do NOT silently fallback to raw_mask > 0.
+                    if building_class_id in vals:
                         mask = (raw_mask == building_class_id).astype(np.uint8) * 255
                     else:
-                        mask = (raw_mask > 0).astype(np.uint8) * 255
+                        print(
+                            f"[Warning] building_class_id {building_class_id} absent in {Path(m_p).name} "
+                            f"(unique classes present: {vals.tolist()}); skipping scene."
+                        )
+                        continue
 
         file_name = Path(img_p).stem
+        scene_to_tiles[file_name] = []
 
         # Tiling process (sliding window / grid)
         for ty in range(0, h - img_size + 1, img_size):
@@ -114,6 +127,35 @@ def preprocess_real_height_data(
                 np.save(os.path.join(out_root, "heights", f"{sid}.npy"), dsm_tile)
 
                 ids.append(sid)
+                scene_to_tiles[file_name].append(sid)
 
-    print(f"Height data preprocessing done: {len(ids)} valid tiles generated -> {out_root}")
-    return ids
+        # Remove scene if no valid tiles were produced
+        if not scene_to_tiles[file_name]:
+            del scene_to_tiles[file_name]
+
+    print(f"Height data preprocessing done: {len(ids)} valid tiles from {len(scene_to_tiles)} scenes -> {out_root}")
+    return ids, scene_to_tiles
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Preprocess height dataset with explicit building class ID validation")
+    parser.add_argument("--image_dir", type=str, required=True, help="Directory containing RGB images")
+    parser.add_argument("--dsm_dir", type=str, required=True, help="Directory containing DSM height images")
+    parser.add_argument("--mask_dir", type=str, default=None, help="Directory containing semantic masks")
+    parser.add_argument("--out_dir", type=str, default="data/synrs3d", help="Output root directory")
+    parser.add_argument("--building-class-id", type=int, default=8, help="Semantic class ID for buildings (default: 8 for SynRS3D)")
+    args = parser.parse_args()
+
+    img_files = sorted(os.listdir(args.image_dir))
+    img_paths = [os.path.join(args.image_dir, f) for f in img_files]
+    dsm_paths = [os.path.join(args.dsm_dir, f) for f in img_files if os.path.exists(os.path.join(args.dsm_dir, f))]
+    mask_paths = [os.path.join(args.mask_dir, f) for f in img_files if os.path.exists(os.path.join(args.mask_dir, f))] if args.mask_dir else None
+
+    preprocess_real_height_data(
+        image_paths=img_paths,
+        dsm_paths=dsm_paths,
+        out_root=args.out_dir,
+        mask_paths=mask_paths,
+        building_class_id=args.building_class_id,
+    )

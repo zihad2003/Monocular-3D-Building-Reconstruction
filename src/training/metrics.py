@@ -28,12 +28,27 @@ def compute_metrics(
     recall = tp / (tp + fn).clamp_min(1e-6)
     f1 = (2 * precision * recall / (precision + recall).clamp_min(1e-6)).mean().item()
 
-    building_px = mask_gt.sum().clamp_min(1.0)
+    gt_building_px = mask_gt.sum().clamp_min(1.0)
+    pred_building_px = pred_mask.sum().clamp_min(1.0)
+
     height_pred_m = height_pred * max_height_m
     height_gt_m = height_gt * max_height_m
-    abs_err = (height_pred_m - height_gt_m).abs() * mask_gt
-    sq_err = ((height_pred_m - height_gt_m) ** 2) * mask_gt
-    mae = (abs_err.sum() / building_px).item()
-    rmse = torch.sqrt(sq_err.sum() / building_px).item()
+    abs_err = (height_pred_m - height_gt_m).abs()
 
-    return {"iou": iou, "f1": f1, "height_mae_m": mae, "height_rmse_m": rmse}
+    # Ground-truth footprint masked error
+    gt_mae = ((abs_err * mask_gt).sum() / gt_building_px).item()
+    gt_sq_err = ((height_pred_m - height_gt_m) ** 2) * mask_gt
+    rmse = torch.sqrt(gt_sq_err.sum() / gt_building_px).item()
+
+    # Predicted footprint masked error (MAE over predicted building area)
+    pred_mae = ((abs_err * pred_mask).sum() / pred_building_px).item()
+
+    return {
+        "iou": iou,
+        "f1": f1,
+        "height_mae_m": gt_mae,
+        "height_mae_gt_m": gt_mae,
+        "height_mae_pred_m": pred_mae,
+        "height_rmse_m": rmse,
+    }
+
