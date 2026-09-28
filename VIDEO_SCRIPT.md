@@ -1,134 +1,145 @@
 # 🎬 3–4 Minute Video Presentation Script & Recording Guide
 **Project:** Geo3D — Monocular 3D Building Reconstruction from Optical Satellite Imagery  
 **Target Duration:** 3 minutes 30 seconds – 4 minutes  
-**Target Audience:** Course Evaluators, Faculty, ML Engineers & Industry Reviewers  
-**Tone:** Confident, clear, engaging, and professional (Simple conversational words, zero confusing jargon)
+**Target Audience:** Course Evaluators, Faculty, Project Judges & ML Engineers  
+**Tone:** Confident, engaging, storytelling, and professional (Simple everyday words, authentic engineering narrative)
+
+---
+
+## 📖 The Core Story Behind Our Project (আমাদের কাজের জার্নি ও ব্যাকগ্রাউন্ড)
+*এই অংশটি প্রেজেন্টারকে স্পষ্ট ধারণা দেবে যে আমরা কীভাবে শুরু করেছিলাম এবং প্রতিটি ধাপে কী কী চ্যালেঞ্জ পার করে আজ এই পর্যায়ে এসেছি।*
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  Phase 1: Idea   │ ──> │  Phase 2: Data   │ ──> │ Phase 3: Model   │ ──> │ Phase 4: Deploy  │
+│ Prototype & Gap  │     │ nDSM & Alignment │     │ 40 Epochs Colab  │     │ Web 3D & Render  │
+└──────────────────┘     └──────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+1. **The Starting Problem:** আমরা চেয়েছিলাম সাধারণ ১টি মাত্র স্যাটেলাইট ছবি থেকে রিয়েল-টাইম 3D সিটি মডেল বানাতে—যেখানে প্রচলিত LiDAR বা ড্রোন সার্ভেতে কোটি কোটি টাকা ও সময় লাগে।
+2. **The Dataset Breakthrough:** শুরুতে BONAI ডেটাসেট নিয়ে কাজ করতে গিয়ে আমরা দেখলাম সেখানে শুধু ছাদের বাউন্ডারি আছে, কিন্তু বাস্তব মিটারে কোনো উচ্চতা নেই! তখন আমরা উচ্চতা নির্ধারণের জন্য রিয়েল Normalized Digital Surface Model (nDSM) পাইপলাইন তৈরি করি।
+3. **Multi-Task Neural Network:** একক মডেল দিয়ে ফুটপ্রিন্ট এবং উচ্চতা দুটোই প্রেডিক্ট করার জন্য আমরা ResNet এনকোডারের সাথে **Dual-head U-Net** আর্কিটেকচার বানাই। ব্যাকগ্রাউন্ড পিক্সেলের বিভ্রান্তি এড়াতে স্পেশাল **Masked Smooth-$L_1$ Loss** ফর্মুলেট করি।
+4. **40-Epoch Training on Google Colab:** ক্লাউড GPU-তে ৪০ ইপক একটানা ট্রেনিং করিয়ে আমরা লক্ষ্যমাত্রা অর্জন করি: **৮৯.৪% IoU** এবং মাত্র **২.৯৮ মিটার MAE**।
+5. **From Pixels to 3D Geometry:** এআই শুধু ছবির পিক্সেল দেয়; তাকে বাস্তব 3D মডেলে রূপান্তর করতে আমরা পলিগন সিম্পলিফিকেশন (Douglas-Peucker) ও Earcut ট্রায়াঙ্গুলেশন দিয়ে স্বয়ংক্রিয় `.OBJ` এক্সট্রুশন ইঞ্জিন তৈরি করি এবং সম্পূর্ণ থ্রি-জেএস (Three.js) ড্যাশবোর্ডে লাইভ করি।
 
 ---
 
 ## 📌 Instructions for the Presenter / Video Creator (ভিডিও যিনি রেকর্ড করবেন তার জন্য নির্দেশিকা)
 
 > [!TIP]
-> **Recording Setup Checklist:**
-> 1. **Screen Resolution:** Record your desktop at **1920x1080 (1080p, 60fps)** using OBS Studio, Loom, or Windows Game Bar (`Win + Alt + R`).
-> 2. **Browser Setup:** Open `http://127.0.0.1:8000/index.html` (Landing Page) and `http://127.0.0.1:8000/dashboard.html` in Chrome or Edge. Press `F11` (or maximize window for a clean view without messy bookmarks).
-> 3. **Audio Quality:** Use a clean microphone or headset. Speak at a relaxed, steady pace (~130 words per minute).
-> 4. **Mouse Movement:** Move the cursor smoothly without shaking or sudden erratic jerks.
-> 5. **Camera/Webcam (Optional):** If showing facecam, keep a small circular frame in the bottom-right corner during Intro & Outro; minimize during the 3D viewer demo.
+> **Recording Checklist:**
+> 1. **Screen Resolution:** রেকর্ড করুন **1920x1080 (Full HD, 60fps)**-এ (OBS Studio, Loom, বা Windows Game Bar `Win + Alt + R`)।
+> 2. **Browser Setup:** ব্রাউজারে `http://127.0.0.1:8000/index.html` (Landing Page) এবং `http://127.0.0.1:8000/dashboard.html` ওপেন রাখুন। `F11` চেপে ফুলস্ক্রিন করে নিন।
+> 3. **Audio:** পরিষ্কার মাইক্রোফোন ব্যবহার করুন। শান্ত ও স্বাভাবিক গতিতে কথা বলুন (~১৩০ শব্দ প্রতি মিনিটে)।
+> 4. **Mouse Movement:** মাউস অপ্রয়োজনীয়ভাবে ঝাঁকাবেন না; যে পয়েন্টের কথা বলছেন সেখানে স্মুথলি মাউস হোভার করুন।
 
 ---
 
-## ⏱️ Video Timeline Breakdown
+## ⏱️ Video Timeline Breakdown (3:30 – 4:00 min)
 
-| Section | Timestamp | Focus Area | Visual on Screen |
+| দৃশ্য | টাইমলাইন | আলোচনার বিষয়বস্তু | স্ক্রিনে যা দেখতে হবে |
 | :--- | :--- | :--- | :--- |
-| **Scene 1: Hook & Problem** | `0:00 – 0:45` | Real-world problem & limitation of LiDAR | Landing Page Hero + Satellite overview |
-| **Scene 2: Core Architecture** | `0:45 – 1:30` | How our AI model works | Pipeline architecture / Workflow graphic |
-| **Scene 3: Live Interactive Demo** | `1:30 – 2:50` | Uploading image & 3D generation | Web Dashboard, Inference, 3D Orbit & Zoom |
-| **Scene 4: Training & Results** | `2:50 – 3:30` | 40-epoch results (89.4% IoU, 2.98m MAE) | Metrics Section & Training curve plot |
-| **Scene 5: Real-World Use & Outro** | `3:30 – 4:00` | Future impact & wrap up | Dashboard with 3D model spinning slowly |
+| **Scene 1** | `0:00 – 0:40` | **The Hook & Problem:** প্রথাগত 3D রিকনস্ট্রাকশনের সীমাবদ্ধতা | ল্যান্ডিং পেজ Hero এরিয়া ও স্যাটেলাইট প্রিভিউ |
+| **Scene 2** | `0:40 – 1:30` | **Our Journey & Engineering Story:** কীভাবে প্রজেক্ট শুরু করলাম ও ডেটা সমস্যা সমাধান করলাম | ল্যান্ডিং পেজের Reconstruction Pipeline সেকশন |
+| **Scene 3** | `1:30 – 2:45` | **Live Interactive 3D Demo:** লাইভ স্যাটেলাইট ছবি প্রসেসিং ও 3D মডেল ইন্টারঅ্যাকশন | ড্যাশবোর্ডে "Skyscrapers" ক্লিক, 3D Orbit, Zoom ও Pan |
+| **Scene 4** | `2:45 – 3:30` | **Training Results:** ৪০ ইপক ট্রেনিং ও অর্জন (89.4% IoU, 2.98m MAE) | ট্রেনিং কার্ভ গ্রাফ ও মেট্রিক্স কাউন্টার |
+| **Scene 5** | `3:30 – 4:00` | **Real-World Impact & Conclusion:** বাস্তব জীবনে ব্যবহার ও বিদায় | 3D মডেলের ৩৬০ ডিগ্রি ঘূর্ণন ও ধন্যবাদ |
 
 ---
 
 ## 🎙️ Detailed Scene-by-Scene Script & Cues
 
-### Scene 1: The Problem & The Big Idea (0:00 – 0:45)
-**Screen Action:**
-- Show the Landing Page: `http://127.0.0.1:8000/index.html`.
-- Cursor hovers gently on the Hero title: *"Single Optical Satellite to Precision 3D Cities"*.
-- Smoothly scroll down slightly to show the side-by-side comparison (Stage 01 2D tile vs Stage 02 3D mesh).
+### Scene 1: The Hook & The Problem (0:00 – 0:40)
+**স্ক্রিন অ্যাকশন:**
+- ল্যান্ডিং পেজে থাকুন: `http://127.0.0.1:8000/index.html`
+- মাউস কার্সারটি হেডিংয়ে রাখুন: *"Single Optical Satellite to Precision 3D Cities"*
+- আস্তে আস্তে নিচে স্ক্রল করে Stage 01 (2D টাইল) এবং Stage 02 (3D বিল্ডিং) কম্প্যারিজনে ফোকাস করুন।
 
 **Presenter Voiceover (বাংলা):**
-> "Creating a 3D digital model of an entire city used to require expensive drone flights, LiDAR sensors, or multiple stereo satellite passes. But what if we could reconstruct an entire 3D city from just **a single standard 2D satellite image**?
+> "একটি পুরো শহরের ডিজিটাল 3D মডেল তৈরি করতে সাধারণত কোটি কোটি টাকার LiDAR সেন্সর, ড্রোন সার্ভে অথবা একাধিক স্যাটেলাইট পাসের প্রয়োজন হয়। কিন্তু আমরা যদি শুধুমাত্র **একটি মাত্র সাধারণ ২D স্যাটেলাইট ছবি** থেকেই পুরো শহরের ত্রিমাত্রিক 3D মডেল রিকনস্ট্রাক্ট করে ফেলতে পারি?
 > 
-> Hello everyone! Welcome to **Geo3D**. In this project, we built a deep-learning-driven pipeline that takes an ordinary optical satellite picture and reconstructs millimeter-accurate 3D building models with heights in just seconds."
-
-*(Optional English alternative for international presentation):*
-> *"Traditionally, creating 3D city models requires costly LiDAR or multi-view stereo flights. Today, we present Geo3D: a deep learning system that reconstructs full 3D building geometries and metric heights from a single monocular 2D satellite image."*
+> হ্যালো সবাইকে! এটি আমাদের প্রজেক্ট—**Geo3D**। আজকের প্রেজেন্টেশনে আমরা দেখাব কীভাবে আমরা গভীর শিখন বা Deep Learning ব্যবহার করে অপটিক্যাল স্যাটেলাইট ছবি থেকে রিয়েল-টাইমে নিখুঁত 3D বিল্ডিং ও তাদের উচ্চতা বের করতে সফল হয়েছি।"
 
 ---
 
-### Scene 2: System Architecture & How It Works (0:45 – 1:30)
-**Screen Action:**
-- Scroll down to the **"Reconstruction Pipeline"** section on the Landing Page.
-- Point to the 3 pipeline steps:
+### Scene 2: Our Journey & The Architecture (0:40 – 1:30)
+**স্ক্রিন অ্যাকশন:**
+- ল্যান্ডিং পেজের **"Reconstruction Pipeline"** সেকশনে স্ক্রল করুন।
+- পর্যায়ক্রমে ৩টি কার্ডে মাউস পয়েন্ট করুন:
   1. *Footprint Segmentation*
   2. *DSM Height Estimation*
   3. *Polygonal 3D Extrusion*
 
 **Presenter Voiceover (বাংলা):**
-> "Let’s look under the hood at how Geo3D works. 
+> "এই প্রজেক্টের পেছনের জার্নিটা বেশ চ্যালেঞ্জিং ছিল। 
 > 
-> Under the hood, we use a custom **Multi-Task Neural Network** built with a shared ResNet encoder and **two parallel U-Net decoders**:
-> - **Decoder 1** learns building footprints — detecting the exact rooftop borders using a combined BCE and Dice loss.
-> - **Decoder 2** regresses the metric height of each pixel using a masked Smooth-L1 loss, predicting the real elevation in meters.
+> শুরুতে যখন আমরা গবেষণা শুরু করি, দেখা গেল প্রচলিত ডেটাসেটগুলোতে কেবল ছাদের বাউন্ডারি ছিল, কিন্তু বিল্ডিংয়ের উচ্চতা ছিল না। তাই আমরা অপটিক্যাল স্যাটেলাইট ইমেজের সাথে ডিজিটাল সারফেস মডেল (nDSM) যুক্ত করে একটি নিখুঁত ট্রেনিং পাইপলাইন তৈরি করি।
 > 
-> After the neural network makes its prediction, our geometric extrusion engine isolates individual building contours, simplifies their polygons, and extrudes them vertically into standard textured 3D `.OBJ` meshes."
+> এরপর আমরা ডিজাইন করি আমাদের কোর আর্কিটেকচার—**MultiTaskBuildingNet**। এটি একটি শেয়ার্ড ResNet এনকোডারের সাথে **দুটি প্যারালাল U-Net ডিকোডার** নিয়ে গঠিত:
+> - **প্রথম হেডটি** BCE এবং Dice Loss দিয়ে বিল্ডিংয়ের ফুটপ্রিন্ট বা সীমানা চিহ্নিত করে।
+> - **দ্বিতীয় হেডটি** আমাদের স্পেশাল Masked Smooth-L1 Loss দিয়ে প্রতিটি পিক্সেলের বাস্তব উচ্চতা (মিটারে) প্রেডিক্ট করে।
+> 
+> এবং সবশেষে, আমাদের জিওমেট্রিক ইঞ্জিন এই ২D প্রেডিকশনগুলোকে স্বয়ংক্রিয়ভাবে পলিগন বানিয়ে 3D মেশ ফাইলে কনভার্ট করে।"
 
 ---
 
-### Scene 3: Live Interactive Demo (1:30 – 2:50)  ⭐ *Most Important Section*
-**Screen Action:**
-- Click on **"Launch Dashboard"** button (or navigate to `http://127.0.0.1:8000/dashboard.html`).
-- Show the clean dark-mode interface: upload dropzone on the left, interactive 3D viewport on the right.
-- In the left sidebar under "Quick Test Samples", click **"Skyscrapers"** (or drag & drop `01_tall_skyscraper_towers.png`).
-- Watch the progress bar advance and log feed show:
-  - *Footprint segmentation complete*
-  - *DSM height regression complete*
-  - *Extruding 3D polygons...*
-- When the 3D model appears in the viewer:
-  - **Left-click and drag** to smoothly rotate the camera around the 3D buildings.
-  - **Right-click and drag** to pan across the streets.
-  - **Scroll mouse wheel** to zoom in close to individual building walls and rooftops.
-  - Point out the bottom statistics badges: Buildings Detected, Mean Height, Max Height.
-- *(Optional bonus):* Click on **"Commercial Downtown"** or **"Residential Houses"** to show how it handles smaller houses with lower elevations!
+### Scene 3: Live Interactive Demo (1:30 – 2:45) ⭐ *সবচেয়ে আকর্ষণীয় পর্ব*
+**স্ক্রিন অ্যাকশন:**
+- উপরে ডানপাশে থাকা **"Launch Dashboard"** বাটনে ক্লিক করুন (পেজ চলে যাবে `dashboard.html`-এ)।
+- ইন্টারফেসটি দেখান: বামে আপলোড জোন ও টেস্ট স্যাম্পল, ডানে ইন্টারঅ্যাক্টিভ 3D ভিউয়ার।
+- বামের Quick Test Samples থেকে **"Skyscrapers"** বাটনে ক্লিক করুন।
+- নিচে ইনফারেস লগগুলো দেখান: *Footprint segmentation complete... DSM height estimated... Extruding 3D polygons...*
+- ৩D মডেলটি লোড হওয়ার পর:
+  - **Left-click drag** করে 3D বিল্ডিংগুলোর চারপাশে ক্যামেরা ঘোরান (Orbit)।
+  - **Right-click drag** করে রাস্তা দিয়ে ক্যামেরাকে প্যান (Pan) করুন।
+  - **Scroll wheel** ঘুরিয়ে বিল্ডিংয়ের ছাদ ও দেয়ালের একদম কাছে জুম-ইন (Zoom) করুন।
+  - নিচে থাকা স্ট্যাটাস ব্যাজগুলো মাউস দিয়ে দেখান: *Buildings Detected, Mean Height, Max Height*।
 
 **Presenter Voiceover (বাংলা):**
-> "Now, let’s see the real-time system in action.
+> "চলুন এবার সিস্টেমটির রিয়েল-টাইম ডেমো দেখা যাক। 
 > 
-> Here is our interactive web dashboard. On the left, we can upload any satellite image or pick one of our pre-calibrated test scenes. Let’s click on **'Skyscrapers'**.
+> এটি আমাদের ইন্টারঅ্যাক্টিভ ওয়েব ড্যাশবোর্ড। আমরা যেকোনো স্যাটেলাইট ছবি আপলোড করতে পারি, অথবা প্রিসেট স্যাম্পল টেস্ট করতে পারি। আমি এখন ক্লিক করছি **'Skyscrapers'** বাটনে।
 > 
-> Instantly, the backend FastAPI server processes the tile through PyTorch. In less than a second, the footprint mask and heightmap are generated. And here is the result: a full 3D interactive mesh rendered right inside Three.js!
+> লক্ষ্য করুন, ব্যাকএন্ডে আমাদের PyTorch মডেল এক সেকেন্ডেরও কম সময়ে ছবিটিকে প্রসেস করে ফেলেছে। স্ক্রিনে আমরা দেখতে পাচ্ছি থ্রি-জেএস (Three.js) দিয়ে রেন্ডার হওয়া একটি পূর্ণাঙ্গ 3D শহরের ব্লক!
 > 
-> Notice how tall commercial skyscrapers have sharp, vertical elevations reaching over 45 meters, while surrounding structures match realistic lower heights. We can freely rotate around the block, inspect angles, zoom in, and even export the model directly for GIS, urban planning, or game engines."
+> মাউস দিয়ে আমরা শহরের যেকোনো কোণ থেকে ঘুরিয়ে দেখতে পাচ্ছি। লম্বা বাণিজ্যিক টাওয়ারগুলোর উচ্চতা স্বয়ংক্রিয়ভাবে ৪৫ মিটারের বেশি ডিটেক্ট হয়েছে, আর পাশের ছোট স্ট্রাকচারগুলো নিখুঁতভাবে কম উচ্চতায় সাজানো হয়েছে। এই 3D মডেলটিকে সরাসরি `.OBJ` ফরম্যাটে এক্সপোর্ট করে যেকোনো GIS বা গেম ইঞ্জিনে ব্যবহার করা সম্ভব।"
 
 ---
 
-### Scene 4: Training & Experimental Performance (2:50 – 3:30)
-**Screen Action:**
-- Switch back to the Landing Page or bring up the **Training Curves** graphic (`training_curves_40epochs.png`).
-- Point to the metrics banner:
+### Scene 4: 40-Epoch Training & Experimental Results (2:45 – 3:30)
+**স্ক্রিন অ্যাকশন:**
+- ল্যান্ডিং পেজে ফিরে যান বা স্ক্রিনে **Training Curves** গ্রাফ (`training_curves_40epochs.png`) ওপেন করুন।
+- ল্যান্ডিং পেজের বড় মেট্রিক্স কার্ডগুলোতে মাউস পয়েন্ট করুন:
   - **89.4% Validation IoU**
   - **2.98 Meters Height MAE**
-  - **6,999+ Training Samples**
-  - **< 850 ms Inference Latency**
+  - **6,999+ Scenes**
+  - **< 850 ms Latency**
 
 **Presenter Voiceover (বাংলা):**
-> "Let’s discuss the model’s training performance.
+> "মডেলের পারফরম্যান্স নিশ্চিত করতে আমরা Google Colab GPU-তে **৪০টি ইপক** ধরে ট্রেনিং সম্পন্ন করেছি। 
 > 
-> We trained our model for **40 epochs** on high-resolution satellite imagery paired with normalized digital surface models (nDSM). 
-> 
-> The results speak for themselves:
-> - Our building footprint segmentation achieved a **Validation IoU of 89.4%**, which accurately separates dense, touching buildings without merging them.
-> - For height estimation, our model reached a **Mean Absolute Error of just 2.98 meters** — that’s less than the height of a single building floor!
-> - The entire pipeline runs with an end-to-end latency of under **850 milliseconds** on CPU inference."
+> ওভারফিটিং দূর করতে এবং নিখুঁত গ্রেডিয়েন্ট পেতে আমরা Cosine Annealing লার্নিং রেট শিডিউলার ব্যবহার করি। ফলাফল অত্যন্ত প্রশংসনীয়:
+> - বিল্ডিং ফুটপ্রিন্ট সেগমেন্টেশনে আমাদের ভ্যালিডেশন IoU পৌঁছেছে **৮৯.৪ শতাংশে**—যা ঘনবসতিপূর্ণ শহরের পাশাপাশি থাকা বিল্ডিংগুলোকে মিশে যাওয়া ছাড়াই আলাদা করতে পারে।
+> - উচ্চতা নির্ধারণে আমাদের Mean Absolute Error নেমে এসেছে মাত্র **২.৯৮ মিটারে**—যা একটি সাধারণ বিল্ডিংয়ের এক তলার উচ্চতার চেয়েও কম!
+> - এবং সম্পূর্ণ এন্ড-টু-এন্ড রিকনস্ট্রাকশন সম্পন্ন হতে সময় লাগে **৮৫০ মিলি-সেকেন্ডেরও কম**।"
 
 ---
 
-### Scene 5: Applications, Future Scope & Outro (3:30 – 4:00)
-**Screen Action:**
-- Return to the 3D Dashboard with the 3D model rotating in auto-orbit mode or gentle manual rotation.
-- Show the clean footer: *"Geo3D — Deep Learning for Monocular Geospatial Intelligence"*.
-- Presenter smile / sign-off.
+### Scene 5: Real-World Applications & Conclusion (3:30 – 4:00)
+**স্ক্রিন অ্যাকশন:**
+- ড্যাশবোর্ডে 3D মডেলটিকে ব্যাকগ্রাউন্ডে ধীরে ধীরে ঘুরতে দিন।
+- প্রেজেন্টার হাসিমুখে কনক্লুশন টানবেন।
 
 **Presenter Voiceover (বাংলা):**
-> "Geo3D demonstrates that high-fidelity 3D geospatial reconstruction is now possible using affordable, widely available single satellite imagery. This technology opens massive opportunities for **disaster damage assessment**, **rapid urban planning**, **solar energy potential calculation**, and **smart city twins**.
+> "Geo3D প্রমাণ করেছে যে কোনো ব্যয়বহুল হার্ডওয়্যার ছাড়াই শুধুমাত্র অপটিক্যাল স্যাটেলাইট ডেটা দিয়ে আধুনিক 3D শহর তৈরি করা সম্ভব। 
 > 
-> Everything is open-source and ready for production deployment. Thank you so much for watching!"
+> এটি ভূমিকম্প বা বন্যার পর **দ্রুত ক্ষয়ক্ষতির মাত্রা নির্ণয়**, **স্মার্ট সিটি প্ল্যানিং**, **সোলার প্যানেলের স্থান নির্বাচন** এবং **৫জি নেটওয়ার্ক সিমুলেশনে** বৈপ্লবিক পরিবর্তন আনতে পারে। আমাদের পুরো প্রজেক্টটি ওপেন-সোর্স এবং রেন্ডার ক্লাউডে ডিপ্লয়মেন্টের জন্য সম্পূর্ণ প্রস্তুত।
+> 
+> সবাইকে অনেক অনেক ধন্যবাদ!"
 
 ---
 
-## 💡 Quick Tips for the Recording Person
-1. **Pacing:** Don't rush through the 3D model interaction. Spend at least 40 seconds smoothly spinning and zooming the 3D buildings. This is the visual "wow factor" that evaluators remember.
-2. **Cursor focus:** While mentioning "89.4% IoU" or "2.98m MAE", circle or hover the mouse over those stats so the viewer’s eye follows naturally.
-3. **Audio recording:** If you make a mistake while reading, pause for 2 seconds, take a breath, and re-read the sentence from the start. You can easily cut out the pause in video editing (CapCut, Premiere, or DaVinci Resolve).
+## 💡 রেকর্ডিংকারীর জন্য বিশেষ ট্রিকস (Pro Tips)
+1. **৩D ইন্টারঅ্যাকশন বেশি দেখাবেন:** দর্শক এবং শিক্ষকদের সবচেয়ে বেশি ভালো লাগে থ্রি-ডি মডেল ঘুরিয়ে দেখানো। তাই Scene 3-তে অন্তত ৪০-৫০ সেকেন্ড সময় নিয়ে আরামসে জুম ও রোটেট করবেন।
+2. **ভুল হলে নো টেনশন:** কথা বলতে গিয়ে কোনো লাইন ভুল হলে ৩ সেকেন্ড থামুন, লম্বা শ্বাস নিন, তারপর ঐ লাইনটি আবার নতুন করে বলুন। ভিডিও এডিটিংয়ে (CapCut বা Premiere) ভুল অংশটি সহজেই কেটে বাদ দেওয়া যাবে।
+3. **আত্মবিশ্বাসী কণ্ঠস্বর:** যেন মনে হয় আপনি নিজেই এই সিস্টেমটির কারিগর এবং প্রতিটা লাইন সহজ বাংলায় স্পষ্ট করে বুঝিয়ে দিচ্ছেন।
