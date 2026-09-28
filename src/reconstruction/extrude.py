@@ -103,11 +103,6 @@ def mask_and_height_to_3d_mesh(
 
         mesh.apply_scale(meters_per_pixel)
 
-        x0, y0 = int(max(minx, 0)), int(max(miny, 0))
-        x1, y1 = int(min(maxx, w_img)), int(min(maxy, h_img))
-        x1, y1 = max(x1, x0 + 1), max(y1, y0 + 1)
-        crop = image_rgb[y0:y1, x0:x1]
-
         world_x = minx * meters_per_pixel
         world_y = (h_img - maxy) * meters_per_pixel
         mesh.apply_translation([world_x, world_y, 0.0])
@@ -116,10 +111,7 @@ def mask_and_height_to_3d_mesh(
         n_buildings += 1
 
     if n_buildings == 0:
-        raise ValueError(
-            "No valid building footprints found in the predicted mask "
-            "(try a lower segmentation threshold or check min_area_px)."
-        )
+        raise ValueError("No buildings detected")
 
     scene_mesh = trimesh.util.concatenate(meshes) if n_buildings > 1 else meshes[0]
 

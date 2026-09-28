@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadObjBtn = document.getElementById('download-obj-btn');
     const exportHeightBtn = document.getElementById('export-height-btn');
 
+    const gsdInput = document.getElementById('gsd-input');
+    const gsdDisplay = document.getElementById('gsd-display');
+    if (gsdInput && gsdDisplay) {
+        gsdInput.addEventListener('input', () => {
+            gsdDisplay.innerText = `${parseFloat(gsdInput.value || 0.3).toFixed(2)} m/px`;
+        });
+    }
+
     const tab3D = document.getElementById('tab-3d');
     const tabMask = document.getElementById('tab-mask');
     const tabHeight = document.getElementById('tab-height');
@@ -104,11 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
             generateBtn.innerText = "Reconstructing 3D...";
             logMsg("Sending image to neural network inference server...");
 
+            const gsdVal = gsdInput ? (parseFloat(gsdInput.value) || 0.3) : 0.3;
             const formData = new FormData();
             formData.append("file", currentFile);
+            formData.append("ground_sample_distance", gsdVal);
 
             let attempt = 0;
-            const maxAttempts = 2;
+            const maxAttempts = 6;
 
             async function runInference() {
                 attempt++;
@@ -119,10 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     if (!response.ok) {
-                        if (response.status === 502 && attempt < maxAttempts) {
-                            logMsg("Cloud instance is warming up its neural network (free tier). Retrying automatically in 4s...");
-                            await new Promise(r => setTimeout(r, 4000));
+                        if ((response.status === 502 || response.status === 503 || response.status === 504) && attempt < maxAttempts) {
+                            logMsg(`server waking up (free tier)... (attempt ${attempt}/${maxAttempts}, retrying in 5s)`);
+                            await new Promise(r => setTimeout(r, 5000));
                             return await runInference();
+                        }
+                        if (response.status === 422) {
+                            const errJson = await response.json().catch(() => null);
+                            const errMsg = (errJson && errJson.error) ? errJson.error : "No buildings detected";
+                            throw new Error(errMsg);
                         }
                         const errText = await response.text().catch(() => '');
                         throw new Error(`Server returned HTTP ${response.status} ${errText ? ': ' + errText : ''}`);
@@ -143,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Update UI Stats
                     if (data.stats) {
-                        modelStats.innerText = `Buildings: ${data.stats.buildings_detected} | Max H: ${data.stats.max_height_m}m | Mean H: ${data.stats.mean_height_m}m`;
+                        modelStats.innerText = `Buildings: ${data.stats.buildings_detected} | Max H: ${data.stats.max_height_m}m | Mean H: ${data.stats.mean_height_m}m | GSD: ${data.stats.ground_sample_distance}m/px`;
                     }
 
                     // Setup Download Links
@@ -161,9 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } catch (err) {
                     console.error(err);
-                    logMsg(`Inference status: ${err.message}`);
-                    if (attempt >= maxAttempts) {
-                        logMsg("Note: The free tier server may still be downloading weights or warming up. Please try clicking Skyscrapers again in 10-15 seconds.");
+                    logMsg(`Inference notice: ${err.message}`);
+                    if (err.message.includes("No buildings detected")) {
+                        alert("No buildings detected in this image. Please upload a satellite image containing building footprints.");
+                    } else if (attempt >= maxAttempts) {
+                        logMsg("Server did not respond after multiple wake-up retries. Please check back in a moment.");
                     }
                 } finally {
                     generateBtn.disabled = false;

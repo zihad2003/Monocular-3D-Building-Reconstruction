@@ -78,9 +78,16 @@
                     <div class="process-controls">
                         <label>Target Level of Detail:</label>
                         <select class="styled-select" id="lod-select">
-                            <option value="lod1">LoD1 (Block Extrusion + Textures)</option>
+                            <option value="lod1">LoD1 (Block Extrusion)</option>
                             <option value="lod2">LoD2 (Roof Topology) - Experimental</option>
                         </select>
+                        <div style="margin: 0.8rem 0;">
+                            <label for="gsd-input" style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 0.35rem;">
+                                <span>Ground Sample Distance (GSD):</span>
+                                <span id="gsd-display" style="color: #60a5fa; font-weight: 600;">0.30 m/px</span>
+                            </label>
+                            <input type="number" id="gsd-input" step="0.05" min="0.05" max="5.0" value="0.30" class="styled-select" style="width: 100%; box-sizing: border-box; padding: 0.5rem; color: #f8fafc; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px;">
+                        </div>
                         <button class="btn-primary full-width" id="generate-btn">Generate 3D Model</button>
                     </div>
                 </div>
