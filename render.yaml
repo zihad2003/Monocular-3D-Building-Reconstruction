@@ -4,7 +4,7 @@ services:
     runtime: python
     region: oregon
     plan: free
-    buildCommand: "chmod +x build.sh && ./build.sh"
+    buildCommand: "bash build.sh"
     startCommand: "python src/demo/server.py"
     envVars:
       - key: PYTHON_VERSION
