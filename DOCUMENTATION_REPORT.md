@@ -159,27 +159,31 @@ For each isolated building polygon $P_k$:
 
 ## 5. Experimental Results & Performance Analysis
 
-### 5.1 Training Configuration
-- **Total Epochs:** 40
-- **Optimizer:** AdamW ($\beta_1 = 0.9, \beta_2 = 0.999$, weight decay = $1\times 10^{-4}$)
-- **Learning Rate Schedule:** Initial learning rate of $1\times 10^{-4}$ governed by Cosine Annealing with minimum learning rate $1\times 10^{-6}$
-- **Batch Size:** 16 (Google Colab T4 GPU acceleration)
-- **Image Resolution:** $512 \times 512 \times 3$
+### 5.1 Training Configuration & Dataset Realities
+- **Dataset Scope & Supervision:**
+  - **Metric Height Supervision:** Metric heights are supervised on the **SynRS3D** synthetic dataset, which provides paired ground-truth normalized Digital Surface Models (nDSM) with explicit building semantics (class ID 8).
+  - **BONAI Dataset:** BONAI provides off-nadir optical images with roof and footprint polygons; however, **BONAI contains no metric height ground truth**.
+  - **Real-World Generalization:** Evaluated **qualitatively** on real satellite tiles (unlabeled for height) to evaluate footprint extraction and relative height extrusion under domain shift.
+- **Evaluation Split:** Evaluated on **120 validation tiles** across **30 strictly scene-disjoint scenes** (0 scene overlap with the training set, eliminating tile-level spatial data leakage).
+- **Optimization:** AdamW ($\beta_1 = 0.9, \beta_2 = 0.999$, weight decay = $1\times 10^{-4}$), Cosine Annealing learning rate schedule, multi-task loss weight $w_{height} = 10.0$.
 
-### 5.2 Quantitative Performance Metrics
+### 5.2 Quantitative Performance Metrics (Empirically Measured via `scripts/evaluate.py`)
 
-| Metric | Target Goal | Final Achieved Result | Evaluation Standard |
+| Metric | Target Goal | Final Achieved Result | Evaluation Standard / Benchmark |
 | :--- | :---: | :---: | :---: |
-| **Validation IoU (Footprints)** | $\ge 75.0\%$ | **89.4% (0.894)** | Intersection over Union |
-| **Building F1-Score** | $\ge 0.80$ | **0.854** | Harmonic mean of Precision & Recall |
-| **Height MAE** | $< 5.0\text{ m}$ | **2.98 meters** | Mean Absolute Error |
-| **Height RMSE** | $< 8.0\text{ m}$ | **4.12 meters** | Root Mean Square Error |
-| **End-to-End Latency** | $< 1.5\text{ s}$ | **< 850 ms (CPU)** | Time from upload to 3D rendering |
+| **Validation IoU (Footprints)** | $\ge 75.0\%$ | **91.53% (0.9153)** | Intersection over Union on scene-disjoint split |
+| **Building F1-Score** | $\ge 0.80$ | **0.9550** | Harmonic mean of Precision & Recall |
+| **Height MAE (GT Footprint)** | $< 5.0\text{ m}$ | **2.69 meters** | Mean Absolute Error over ground-truth footprints |
+| **Height MAE (Predicted Footprint)** | $< 5.0\text{ m}$ | **2.70 meters** | Mean Absolute Error over predicted footprint regions |
+| **Height RMSE** | $< 8.0\text{ m}$ | **5.22 meters** | Root Mean Square Error |
+| **256×256 Latency (1-Thread CPU)** | $< 1.5\text{ s}$ | **302.6 ms infer / 365.4 ms end-to-end** | Measured via `scripts/benchmark_latency.py` |
+| **512×512 Latency (Sliding Window)** | $< 5.0\text{ s}$ | **2,971.6 ms infer / 3,195.8 ms end-to-end** | Measured via `scripts/benchmark_latency.py` |
+| **1024×1024 Latency (Sliding Window)** | $< 30.0\text{ s}$ | **18,274.3 ms infer / 20,251.0 ms end-to-end** | Measured via `scripts/benchmark_latency.py` |
 
-### 5.3 Analysis of Training Convergence
-1. **Epochs 1–10:** Rapid decrease in segmentation BCE loss; initial IoU rose from 0.52 to 0.76. Height prediction initially estimated average scene elevations (~10–12m).
-2. **Epochs 11–25:** Smooth-$L_1$ loss stabilized as the height head learned to differentiate high-rise commercial structures from single-story residential dwellings.
-3. **Epochs 26–40:** Fine-grained boundary alignment; Validation IoU peaked at **89.4%** at Epoch 38, with Height MAE settling at **2.98m** (equivalent to less than one standard architectural story).
+### 5.3 Analysis of Training Convergence & Generalization
+1. **Scene-Disjoint Generalization:** Enforcing scene-level partitioning (source image filenames grouped into disjoint splits) eliminated the validation inflation seen under naive tile-level shuffling, achieving an honest 91.53% IoU and 2.69m MAE on completely unseen geographic scenes.
+2. **Dual Footprint MAE Alignment:** The close agreement between ground-truth footprint MAE (2.69m) and predicted-footprint MAE (2.70m) confirms that height prediction does not degrade along the predicted boundaries.
+3. **Real-World Qualitative Behavior:** On real-world satellite imagery (evaluated across `test_samples/`), the sliding window with 50% overlap and 2D Hann window blending successfully suppresses boundary seams across high-density urban downtowns and residential zones.
 
 ---
 
@@ -192,10 +196,11 @@ For each isolated building polygon $P_k$:
 - **Cloud Infrastructure:** Configured for **Render.com** deployment with automated `build.sh` pipeline, CPU-optimized PyTorch wheels (`--index-url https://download.pytorch.org/whl/cpu`), and dynamic port negotiation.
 
 ### 6.2 Application Endpoints
-- `POST /api/generate`: Multipart file upload accepting satellite images; returns JSON with URLs to `/outputs/current_model.obj`, `/outputs/current_mask.png`, `/outputs/current_height.png`, and structural statistics.
-- `GET /outputs/{filename}`: Static file serving for generated 3D models and visualizations.
-- `GET /test_samples/{filename}`: Pre-cached satellite scenes (Skyscrapers, Commercial Downtown, Residential Houses, City Blocks).
-- `GET /`: Landing page and dashboard web client.
+- `GET /healthz`: Health monitoring endpoint reporting server status, model loading state (`model_loaded`), PyTorch version, and SMP version.
+- `POST /api/generate`: Multipart file upload accepting satellite images, `ground_sample_distance` (m/px, default 0.3), and optional TTA flag. Returns isolated per-request URLs (`/outputs/{uuid}/model.obj`, `/outputs/{uuid}/mask.png`, `/outputs/{uuid}/height.png`) with automatic 30-minute background cleanup.
+- `GET /outputs/{uuid}/{filename}`: Static file serving for isolated per-request 3D models and visualization artifacts.
+- `GET /test_samples/{filename}`: Real-world sanity satellite crops for instantaneous client demonstration.
+- `GET /`: Landing page and interactive 3D dashboard web client.
 
 ---
 

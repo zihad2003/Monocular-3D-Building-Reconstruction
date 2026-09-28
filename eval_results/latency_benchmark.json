@@ -1,0 +1,58 @@
+{
+  "device": "cpu",
+  "torch_threads": 1,
+  "encoder": "resnet18",
+  "benchmarks": [
+    {
+      "image_size": "256x256",
+      "num_runs": 5,
+      "inference_ms": {
+        "mean": 302.6,
+        "median": 299.23,
+        "std": 9.25,
+        "min": 293.54,
+        "max": 320.37
+      },
+      "end_to_end_ms": {
+        "mean": 365.38,
+        "median": 353.55,
+        "min": 347.7,
+        "max": 404.65
+      }
+    },
+    {
+      "image_size": "512x512",
+      "num_runs": 5,
+      "inference_ms": {
+        "mean": 2971.62,
+        "median": 2803.02,
+        "std": 355.42,
+        "min": 2627.81,
+        "max": 3546.24
+      },
+      "end_to_end_ms": {
+        "mean": 3195.77,
+        "median": 2979.57,
+        "min": 2797.81,
+        "max": 3829.56
+      }
+    },
+    {
+      "image_size": "1024x1024",
+      "num_runs": 5,
+      "inference_ms": {
+        "mean": 18274.34,
+        "median": 16101.22,
+        "std": 4306.14,
+        "min": 15700.76,
+        "max": 26856.92
+      },
+      "end_to_end_ms": {
+        "mean": 20250.96,
+        "median": 17616.39,
+        "min": 17206.51,
+        "max": 29293.22
+      }
+    }
+  ]
+}

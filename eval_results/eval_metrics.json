@@ -1,0 +1,8 @@
+{
+  "iou": 0.9153,
+  "f1": 0.955,
+  "height_mae_m": 2.6875,
+  "height_mae_gt_m": 2.6875,
+  "height_mae_pred_m": 2.6993,
+  "height_rmse_m": 5.2241
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "sample": "01_tall_skyscraper_towers",
+    "buildings_detected": 1,
+    "max_height_m": 62.22,
+    "mean_height_m": 28.68,
+    "panel": "01_tall_skyscraper_towers_qualitative_panel.png"
+  },
+  {
+    "sample": "02_dense_commercial_downtown",
+    "buildings_detected": 1,
+    "max_height_m": 61.48,
+    "mean_height_m": 19.59,
+    "panel": "02_dense_commercial_downtown_qualitative_panel.png"
+  },
+  {
+    "sample": "03_residential_houses_neighborhood",
+    "buildings_detected": 1,
+    "max_height_m": 11.51,
+    "mean_height_m": 5.24,
+    "panel": "03_residential_houses_neighborhood_qualitative_panel.png"
+  },
+  {
+    "sample": "04_city_blocks_medium_rise",
+    "buildings_detected": 1,
+    "max_height_m": 9.87,
+    "mean_height_m": 4.31,
+    "panel": "04_city_blocks_medium_rise_qualitative_panel.png"
+  },
+  {
+    "sample": "05_urban_highrise_quarter",
+    "buildings_detected": 1,
+    "max_height_m": 39.23,
+    "mean_height_m": 15.55,
+    "panel": "05_urban_highrise_quarter_qualitative_panel.png"
+  },
+  {
+    "sample": "06_industrial_warehouse_complex",
+    "buildings_detected": 1,
+    "max_height_m": 59.97,
+    "mean_height_m": 29.1,
+    "panel": "06_industrial_warehouse_complex_qualitative_panel.png"
+  },
+  {
+    "sample": "07_suburban_residential_layout",
+    "buildings_detected": 1,
+    "max_height_m": 43.37,
+    "mean_height_m": 4.94,
+    "panel": "07_suburban_residential_layout_qualitative_panel.png"
+  },
+  {
+    "sample": "08_mixed_density_urban_fabric",
+    "buildings_detected": 1,
+    "max_height_m": 58.73,
+    "mean_height_m": 18.24,
+    "panel": "08_mixed_density_urban_fabric_qualitative_panel.png"
+  }
+]
